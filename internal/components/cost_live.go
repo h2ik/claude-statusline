@@ -39,7 +39,7 @@ func (c *CostLive) Render(in *input.StatusLineInput) string {
 	}
 
 	// Display live session cost
-	return fmt.Sprintf("\xf0\x9f\x94\xa5%s $%.2f",
+	return fmt.Sprintf("\xf0\x9f\x94\xa5 %s $%.2f",
 		c.renderer.Dimmed("LIVE"),
 		in.Cost.TotalCostUSD,
 	)
