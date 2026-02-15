@@ -1,6 +1,9 @@
 package cost
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -75,5 +78,77 @@ func TestParseTranscriptEntry_HandlesExtraFields(t *testing.T) {
 	}
 	if entry.OutputTokens != 220 {
 		t.Errorf("output_tokens: got %d, want 220", entry.OutputTokens)
+	}
+}
+
+func TestScanFile_ComputesCost(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.jsonl")
+	lines := []string{
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
+		`{"type":"user","message":{"role":"user","content":"hello"},"timestamp":"2026-02-15T10:00:01.000Z"}`,
+		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
+	}
+	os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+
+	cutoff := time.Date(2026, 2, 15, 0, 0, 0, 0, time.UTC)
+	cost := scanFile(path, cutoff)
+	// Opus: (1000*5+500*25)/1M=0.0175, Haiku: (2000*1+100*5)/1M=0.0025
+	expected := 0.0175 + 0.0025
+	if cost < expected-0.0001 || cost > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, cost)
+	}
+}
+
+func TestScanFile_FiltersOldEntries(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.jsonl")
+	lines := []string{
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-01-01T10:00:00.000Z"}`,
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
+	}
+	os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+
+	cutoff := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	cost := scanFile(path, cutoff)
+	expected := 0.00175 // Only recent entry
+	if cost < expected-0.0001 || cost > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, cost)
+	}
+}
+
+func TestScanFile_HandlesEmptyFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "empty.jsonl")
+	os.WriteFile(path, []byte(""), 0644)
+	cost := scanFile(path, time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+	if cost != 0.0 {
+		t.Errorf("expected 0.0, got %f", cost)
+	}
+}
+
+func TestScanFile_HandlesMissingFile(t *testing.T) {
+	cost := scanFile("/nonexistent/path.jsonl", time.Now())
+	if cost != 0.0 {
+		t.Errorf("expected 0.0, got %f", cost)
+	}
+}
+
+func TestScanFile_HandlesMalformedLines(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "malformed.jsonl")
+	lines := []string{
+		`{not valid json`,
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
+		``,
+		`another bad line`,
+	}
+	os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+
+	cutoff := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	cost := scanFile(path, cutoff)
+	expected := 0.0175
+	if cost < expected-0.0001 || cost > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, cost)
 	}
 }

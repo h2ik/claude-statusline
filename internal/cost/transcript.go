@@ -1,7 +1,9 @@
 package cost
 
 import (
+	"bufio"
 	"encoding/json"
+	"os"
 	"strings"
 	"time"
 )
@@ -57,4 +59,37 @@ func parseTranscriptEntry(line []byte) (transcriptEntry, bool) {
 		CacheReadTokens:  raw.Message.Usage.CacheReadInputTokens,
 		Timestamp:        ts,
 	}, true
+}
+
+// scanFile reads a single JSONL file and returns the total USD cost of all
+// assistant entries whose timestamp is after the cutoff.
+func scanFile(path string, cutoff time.Time) float64 {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0.0
+	}
+	defer f.Close()
+
+	var total float64
+	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+		entry, ok := parseTranscriptEntry(line)
+		if !ok {
+			continue
+		}
+		if entry.Timestamp.After(cutoff) {
+			total += CalculateEntryCost(
+				entry.InputTokens, entry.OutputTokens,
+				entry.CacheWriteTokens, entry.CacheReadTokens,
+				entry.Model,
+			)
+		}
+	}
+	return total
 }
