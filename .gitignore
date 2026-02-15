@@ -1,5 +1,6 @@
 # Binaries
 claude-statusline
+statusline
 *.exe
 *.dll
 *.so
@@ -22,3 +23,5 @@ go.work
 .vscode/
 *.swp
 *.swo
+bin/
+
