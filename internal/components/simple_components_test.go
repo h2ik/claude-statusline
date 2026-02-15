@@ -105,6 +105,20 @@ func TestModelInfo_Render_EmptyDisplayName(t *testing.T) {
 	}
 }
 
+func TestModelInfo_Render_BedrockARN_ReturnsEmpty(t *testing.T) {
+	r := render.New()
+	c := NewModelInfo(r)
+
+	in := &input.StatusLineInput{
+		Model: input.ModelInfo{DisplayName: "arn:aws:bedrock:us-east-2:123456:application-inference-profile/abc123"},
+	}
+
+	output := c.Render(in)
+	if output != "" {
+		t.Errorf("expected empty string for Bedrock ARN, got: %q", output)
+	}
+}
+
 // ============================================================
 // Commits tests
 // ============================================================

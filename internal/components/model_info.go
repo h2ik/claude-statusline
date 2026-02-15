@@ -25,8 +25,15 @@ func (c *ModelInfo) Name() string {
 }
 
 // Render produces the model info string from the given input.
+// Returns empty for Bedrock ARN models (handled by BedrockModel component).
 func (c *ModelInfo) Render(in *input.StatusLineInput) string {
 	name := in.Model.DisplayName
+
+	// Skip if this is a Bedrock ARN — let bedrock_model handle it
+	if strings.Contains(name, "arn:") {
+		return ""
+	}
+
 	if name == "" {
 		name = "Claude"
 	}
