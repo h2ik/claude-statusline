@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/cost"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
@@ -18,8 +19,9 @@ import (
 
 func TestCostMonthly_Name(t *testing.T) {
 	r := render.New()
-	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostMonthly(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(t.TempDir(), ca)
+	c := NewCostMonthly(r, s)
 
 	if c.Name() != "cost_monthly" {
 		t.Errorf("expected 'cost_monthly', got %q", c.Name())
@@ -28,8 +30,9 @@ func TestCostMonthly_Name(t *testing.T) {
 
 func TestCostMonthly_Render_EmptyHistory(t *testing.T) {
 	r := render.New()
-	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostMonthly(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(t.TempDir(), ca)
+	c := NewCostMonthly(r, s)
 
 	in := &input.StatusLineInput{}
 
@@ -43,22 +46,22 @@ func TestCostMonthly_Render_EmptyHistory(t *testing.T) {
 }
 
 func TestCostMonthly_Render_WithEntries(t *testing.T) {
-	tmpDir := t.TempDir()
-	histPath := filepath.Join(tmpDir, "cost.jsonl")
+	projectsDir := t.TempDir()
+	projDir := filepath.Join(projectsDir, "-Users-test")
+	os.MkdirAll(projDir, 0755)
+	os.WriteFile(filepath.Join(projDir, "session.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-24*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
+	), 0644)
 
 	r := render.New()
-	h := cost.NewHistory(histPath)
-
-	// Add entries within the 30-day window
-	h.Append(cost.Entry{SessionID: "s1", Cost: 1.50, Timestamp: time.Now().Add(-1 * 24 * time.Hour)})
-	h.Append(cost.Entry{SessionID: "s2", Cost: 2.75, Timestamp: time.Now().Add(-5 * 24 * time.Hour)})
-
-	c := NewCostMonthly(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(projectsDir, ca)
+	c := NewCostMonthly(r, s)
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "$4.25") {
-		t.Errorf("expected '$4.25' for summed entries, got: %s", output)
+	if !strings.Contains(output, "$0.02") {
+		t.Errorf("expected cost around $0.0175 for transcript entry, got: %s", output)
 	}
 }
 
@@ -68,8 +71,9 @@ func TestCostMonthly_Render_WithEntries(t *testing.T) {
 
 func TestCostWeekly_Name(t *testing.T) {
 	r := render.New()
-	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostWeekly(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(t.TempDir(), ca)
+	c := NewCostWeekly(r, s)
 
 	if c.Name() != "cost_weekly" {
 		t.Errorf("expected 'cost_weekly', got %q", c.Name())
@@ -78,8 +82,9 @@ func TestCostWeekly_Name(t *testing.T) {
 
 func TestCostWeekly_Render_EmptyHistory(t *testing.T) {
 	r := render.New()
-	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostWeekly(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(t.TempDir(), ca)
+	c := NewCostWeekly(r, s)
 
 	in := &input.StatusLineInput{}
 
@@ -93,23 +98,25 @@ func TestCostWeekly_Render_EmptyHistory(t *testing.T) {
 }
 
 func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
-	tmpDir := t.TempDir()
-	histPath := filepath.Join(tmpDir, "cost.jsonl")
+	projectsDir := t.TempDir()
+	projDir := filepath.Join(projectsDir, "-Users-test")
+	os.MkdirAll(projDir, 0755)
+	os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
+	), 0644)
+	os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-10*24*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
+	), 0644)
 
 	r := render.New()
-	h := cost.NewHistory(histPath)
-
-	// Entry within 7-day window
-	h.Append(cost.Entry{SessionID: "s1", Cost: 3.00, Timestamp: time.Now().Add(-2 * 24 * time.Hour)})
-	// Entry outside 7-day window (should be excluded)
-	h.Append(cost.Entry{SessionID: "s2", Cost: 10.00, Timestamp: time.Now().Add(-10 * 24 * time.Hour)})
-
-	c := NewCostWeekly(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(projectsDir, ca)
+	c := NewCostWeekly(r, s)
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "$3.00") {
-		t.Errorf("expected '$3.00' (only recent entry), got: %s", output)
+	if !strings.Contains(output, "$0.02") {
+		t.Errorf("expected cost around $0.0175 (only recent entry), got: %s", output)
 	}
 }
 
@@ -119,8 +126,9 @@ func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
 
 func TestCostDaily_Name(t *testing.T) {
 	r := render.New()
-	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostDaily(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(t.TempDir(), ca)
+	c := NewCostDaily(r, s)
 
 	if c.Name() != "cost_daily" {
 		t.Errorf("expected 'cost_daily', got %q", c.Name())
@@ -129,8 +137,9 @@ func TestCostDaily_Name(t *testing.T) {
 
 func TestCostDaily_Render_EmptyHistory(t *testing.T) {
 	r := render.New()
-	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostDaily(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(t.TempDir(), ca)
+	c := NewCostDaily(r, s)
 
 	in := &input.StatusLineInput{}
 
@@ -144,23 +153,26 @@ func TestCostDaily_Render_EmptyHistory(t *testing.T) {
 }
 
 func TestCostDaily_Render_FiltersOldEntries(t *testing.T) {
-	tmpDir := t.TempDir()
-	histPath := filepath.Join(tmpDir, "cost.jsonl")
+	projectsDir := t.TempDir()
+	projDir := filepath.Join(projectsDir, "-Users-test")
+	os.MkdirAll(projDir, 0755)
+	os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-6*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
+	), 0644)
+	os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
+	), 0644)
 
 	r := render.New()
-	h := cost.NewHistory(histPath)
-
-	// Entry within 24-hour window
-	h.Append(cost.Entry{SessionID: "s1", Cost: 0.50, Timestamp: time.Now().Add(-6 * time.Hour)})
-	// Entry outside 24-hour window
-	h.Append(cost.Entry{SessionID: "s2", Cost: 5.00, Timestamp: time.Now().Add(-48 * time.Hour)})
-
-	c := NewCostDaily(r, h)
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(projectsDir, ca)
+	c := NewCostDaily(r, s)
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "$0.50") {
-		t.Errorf("expected '$0.50' (only recent entry), got: %s", output)
+	// Haiku: (2000*1+100*5)/1M = 0.0025
+	if !strings.Contains(output, "$0.00") {
+		t.Errorf("expected cost around $0.0025 (only recent entry), got: %s", output)
 	}
 }
 

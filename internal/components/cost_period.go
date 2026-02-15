@@ -9,11 +9,11 @@ import (
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
-// CostPeriod renders a rolling cost total for a configurable time window.
-// Used for monthly, weekly, and daily cost displays.
+// CostPeriod renders a rolling cost total by scanning Claude Code's
+// native JSONL transcript files for a configurable time window.
 type CostPeriod struct {
 	renderer *render.Renderer
-	history  *cost.History
+	scanner  *cost.TranscriptScanner
 	name     string
 	label    string
 	emoji    string
@@ -25,7 +25,7 @@ func (c *CostPeriod) Name() string {
 }
 
 func (c *CostPeriod) Render(in *input.StatusLineInput) string {
-	total, _ := c.history.CalculatePeriod(c.duration)
+	total := c.scanner.CalculatePeriod(c.duration)
 
 	return fmt.Sprintf("%s %s $%.2f",
 		c.emoji,
@@ -35,10 +35,10 @@ func (c *CostPeriod) Render(in *input.StatusLineInput) string {
 }
 
 // NewCostMonthly creates a 30-day rolling cost component.
-func NewCostMonthly(r *render.Renderer, h *cost.History) *CostPeriod {
+func NewCostMonthly(r *render.Renderer, s *cost.TranscriptScanner) *CostPeriod {
 	return &CostPeriod{
 		renderer: r,
-		history:  h,
+		scanner:  s,
 		name:     "cost_monthly",
 		label:    "30DAY",
 		emoji:    "📈",
@@ -47,10 +47,10 @@ func NewCostMonthly(r *render.Renderer, h *cost.History) *CostPeriod {
 }
 
 // NewCostWeekly creates a 7-day rolling cost component.
-func NewCostWeekly(r *render.Renderer, h *cost.History) *CostPeriod {
+func NewCostWeekly(r *render.Renderer, s *cost.TranscriptScanner) *CostPeriod {
 	return &CostPeriod{
 		renderer: r,
-		history:  h,
+		scanner:  s,
 		name:     "cost_weekly",
 		label:    "7DAY",
 		emoji:    "📊",
@@ -59,10 +59,10 @@ func NewCostWeekly(r *render.Renderer, h *cost.History) *CostPeriod {
 }
 
 // NewCostDaily creates a 24-hour rolling cost component.
-func NewCostDaily(r *render.Renderer, h *cost.History) *CostPeriod {
+func NewCostDaily(r *render.Renderer, s *cost.TranscriptScanner) *CostPeriod {
 	return &CostPeriod{
 		renderer: r,
-		history:  h,
+		scanner:  s,
 		name:     "cost_daily",
 		label:    "DAY",
 		emoji:    "📅",

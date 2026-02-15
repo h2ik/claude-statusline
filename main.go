@@ -25,10 +25,12 @@ func main() {
 	homeDir, _ := os.UserHomeDir()
 	cacheDir := filepath.Join(homeDir, ".cache", "claude-statusline")
 	costDir := filepath.Join(homeDir, ".claude", "statusline", "costs")
+	projectsDir := filepath.Join(homeDir, ".claude", "projects")
 
 	c := cache.New(cacheDir)
 	r := render.New()
 	h := cost.NewHistory(filepath.Join(costDir, "history.jsonl"))
+	scanner := cost.NewTranscriptScanner(projectsDir, c)
 
 	// Create registry and register components
 	registry := component.NewRegistry()
@@ -45,9 +47,9 @@ func main() {
 	registry.Register(components.NewTimeDisplay(r))
 
 	// Line 3 components
-	registry.Register(components.NewCostMonthly(r, h))
-	registry.Register(components.NewCostWeekly(r, h))
-	registry.Register(components.NewCostDaily(r, h))
+	registry.Register(components.NewCostMonthly(r, scanner))
+	registry.Register(components.NewCostWeekly(r, scanner))
+	registry.Register(components.NewCostDaily(r, scanner))
 	registry.Register(components.NewCostLive(r, h))
 	registry.Register(components.NewContextWindow(r))
 	registry.Register(components.NewSessionMode(r))
