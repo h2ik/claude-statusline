@@ -1,6 +1,6 @@
 module github.com/h2ik/claude-statusline
 
-go 1.25.0
+go 1.23.0
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0

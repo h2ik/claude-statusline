@@ -231,4 +231,3 @@ func TestTimeDisplay_Render_ContainsClockEmoji(t *testing.T) {
 		t.Errorf("expected clock emoji in output, got: %s", output)
 	}
 }
-

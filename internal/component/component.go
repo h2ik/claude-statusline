@@ -6,6 +6,6 @@ import "github.com/h2ik/claude-statusline/internal/input"
 // Each component has a name (used for registry lookup and configuration) and a
 // Render method that produces the component's output string.
 type Component interface {
-    Name() string
-    Render(input *input.StatusLineInput) string
+	Name() string
+	Render(input *input.StatusLineInput) string
 }

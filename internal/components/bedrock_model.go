@@ -89,7 +89,6 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	return friendlyName, region
 }
 
-
 // getFriendlyName maps known model ARN fragments to human-readable names.
 func (c *BedrockModel) getFriendlyName(modelARN string) string {
 	mapping := map[string]string{
