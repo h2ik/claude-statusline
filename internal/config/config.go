@@ -23,8 +23,10 @@ type Layout struct {
 // ComponentConfig holds per-component configuration options.
 // Pointer bools distinguish "not set" from "set to false".
 type ComponentConfig struct {
-	ShowRegion *bool `toml:"show_region,omitempty"`
-	ShowTokens *bool `toml:"show_tokens,omitempty"`
+	ShowRegion      *bool `toml:"show_region,omitempty"`
+	ShowTokens      *bool `toml:"show_tokens,omitempty"`
+	ShowVelocity    *bool `toml:"show_velocity,omitempty"`
+	ShowCostPerLine *bool `toml:"show_cost_per_line,omitempty"`
 }
 
 // Load reads a TOML configuration file from the given path.
@@ -98,6 +100,14 @@ func (c *Config) GetBool(component, key string, fallback bool) bool {
 	case "show_tokens":
 		if comp.ShowTokens != nil {
 			return *comp.ShowTokens
+		}
+	case "show_velocity":
+		if comp.ShowVelocity != nil {
+			return *comp.ShowVelocity
+		}
+	case "show_cost_per_line":
+		if comp.ShowCostPerLine != nil {
+			return *comp.ShowCostPerLine
 		}
 	}
 
