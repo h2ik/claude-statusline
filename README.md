@@ -35,6 +35,44 @@ Update `~/.claude/settings.json`:
 
 **Line 3:** Cost tracking (30day, 7day, daily, live), context window, output style
 
+#### Line 4: Block Metrics + Code Stats
+
+- `burn_rate` - Current spending velocity ($/min)
+- `cache_efficiency` - Cache hit ratio with color coding
+- `block_projection` - Rate limit utilization (5h/7d windows)
+- `code_productivity` - Lines per minute and cost per line (configurable)
+
+**Note:** Line 4 components are most useful for direct Anthropic API users.
+Bedrock users will see graceful degradation (empty components) where rate
+limit data is unavailable.
+
+## Configuration
+
+The statusline reads configuration from `~/.claude/statusline/config.toml`.
+A default config is created automatically on first run.
+
+```toml
+# Claude Code Statusline Configuration
+
+[layout]
+lines = [
+  ["repo_info"],
+  ["bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"],
+  ["cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"],
+  ["burn_rate", "cache_efficiency", "block_projection", "code_productivity"],
+]
+
+[components.bedrock_model]
+show_region = true
+
+[components.context_window]
+show_tokens = true
+
+[components.code_productivity]
+show_velocity = true
+show_cost_per_line = true
+```
+
 ## Development
 
 Run tests:
