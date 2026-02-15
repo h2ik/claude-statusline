@@ -49,7 +49,7 @@ func main() {
 
 	// Line 2 components
 	registry.Register(components.NewModelInfo(r))
-	registry.Register(components.NewBedrockModel(r, c))
+	registry.Register(components.NewBedrockModel(r, c, cfg))
 	registry.Register(components.NewCommits(r))
 	registry.Register(components.NewSubmodules(r))
 	registry.Register(components.NewVersionInfo(r, c))

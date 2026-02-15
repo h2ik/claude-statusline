@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
+	"github.com/h2ik/claude-statusline/internal/config"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -17,11 +18,12 @@ import (
 type BedrockModel struct {
 	renderer *render.Renderer
 	cache    *cache.Cache
+	config   *config.Config
 }
 
-// NewBedrockModel creates a new BedrockModel component with the given renderer and cache.
-func NewBedrockModel(r *render.Renderer, c *cache.Cache) *BedrockModel {
-	return &BedrockModel{renderer: r, cache: c}
+// NewBedrockModel creates a new BedrockModel component with the given renderer, cache, and config.
+func NewBedrockModel(r *render.Renderer, c *cache.Cache, cfg *config.Config) *BedrockModel {
+	return &BedrockModel{renderer: r, cache: c, config: cfg}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -40,7 +42,7 @@ func (c *BedrockModel) Render(in *input.StatusLineInput) string {
 	}
 
 	name, region := c.resolveBedrockARN(modelName)
-	if region != "" {
+	if region != "" && c.config.GetBool("bedrock_model", "show_region", true) {
 		return fmt.Sprintf("🧠 %s %s", c.renderer.Text(name), c.renderer.Dimmed("("+region+")"))
 	}
 	return fmt.Sprintf("🧠 %s", c.renderer.Text(name))
