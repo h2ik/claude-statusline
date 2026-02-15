@@ -39,18 +39,35 @@ func (c *BedrockModel) Render(in *input.StatusLineInput) string {
 		return ""
 	}
 
-	resolved := c.resolveBedrockARN(modelName)
-	return fmt.Sprintf("🧠 %s", c.renderer.Text(resolved))
+	name, region := c.resolveBedrockARN(modelName)
+	if region != "" {
+		return fmt.Sprintf("🧠 %s %s", c.renderer.Text(name), c.renderer.Dimmed("("+region+")"))
+	}
+	return fmt.Sprintf("🧠 %s", c.renderer.Text(name))
 }
 
-// resolveBedrockARN resolves a Bedrock inference profile ARN to a friendly name,
-// using the cache to avoid repeated AWS CLI calls.
-func (c *BedrockModel) resolveBedrockARN(arn string) string {
-	cached, err := c.cache.Get("bedrock:"+arn, 24*time.Hour)
-	if err == nil {
-		return string(cached)
+// resolveBedrockARN resolves a Bedrock inference profile ARN to a friendly name
+// and region, using the cache to avoid repeated AWS CLI calls.
+// The cache stores "name\tregion" so both values survive round-trips.
+func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
+	// Extract region from ARN (always available)
+	parts := strings.Split(arn, ":")
+	region := ""
+	if len(parts) >= 4 {
+		region = parts[3]
 	}
 
+	// Check cache — stored as "name\tregion"
+	cached, err := c.cache.Get("bedrock:"+arn, 24*time.Hour)
+	if err == nil {
+		fields := strings.SplitN(string(cached), "\t", 2)
+		if len(fields) == 2 {
+			return fields[0], fields[1]
+		}
+		return string(cached), region
+	}
+
+	// Resolve via AWS CLI
 	cmd := exec.Command("aws", "bedrock", "get-inference-profile",
 		"--inference-profile-identifier", arn,
 		"--query", "models[0].modelArn",
@@ -58,41 +75,20 @@ func (c *BedrockModel) resolveBedrockARN(arn string) string {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return c.fallbackFromARN(arn)
+		name := "Bedrock Model"
+		c.cache.Set("bedrock:"+arn, []byte(name+"\t"+region), 24*time.Hour)
+		return name, region
 	}
 
 	modelARN := strings.TrimSpace(string(output))
 	friendlyName := c.getFriendlyName(modelARN)
 
-	parts := strings.Split(arn, ":")
-	region := ""
-	if len(parts) >= 4 {
-		region = parts[3]
-	}
+	// Cache as "name\tregion"
+	c.cache.Set("bedrock:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
-	result := friendlyName
-	if region != "" {
-		result = fmt.Sprintf("%s (%s)", friendlyName, region)
-	}
-
-	c.cache.Set("bedrock:"+arn, []byte(result), 24*time.Hour)
-
-	return result
+	return friendlyName, region
 }
 
-// fallbackFromARN extracts the region from the ARN and returns a generic label
-// when the AWS CLI call fails.
-func (c *BedrockModel) fallbackFromARN(arn string) string {
-	parts := strings.Split(arn, ":")
-	region := ""
-	if len(parts) >= 4 {
-		region = parts[3]
-	}
-	if region != "" {
-		return fmt.Sprintf("Bedrock Model (%s)", region)
-	}
-	return "Bedrock Model"
-}
 
 // getFriendlyName maps known model ARN fragments to human-readable names.
 func (c *BedrockModel) getFriendlyName(modelARN string) string {
