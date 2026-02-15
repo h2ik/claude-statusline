@@ -1,0 +1,57 @@
+version: 2
+
+project_name: claude-statusline
+
+builds:
+  - binary: claude-statusline
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+      - '^style:'
+  groups:
+    - title: Features
+      regexp: '^feat'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^fix'
+      order: 1
+    - title: Other
+      order: 999
+
+brews:
+  - repository:
+      owner: h2ik
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    name: claude-statusline
+    homepage: https://github.com/h2ik/claude-statusline
+    description: Statusline for Claude Code terminal integration
+    license: MIT
+    install: |
+      system "/usr/bin/xattr", "-cr", "#{staged_path}" if OS.mac?
+      bin.install "claude-statusline"
