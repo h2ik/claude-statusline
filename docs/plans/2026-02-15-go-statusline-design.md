@@ -74,7 +74,8 @@ claude-statusline/
       history.go          # Append-only JSONL history file
     components/
       repo_info.go        # Line 1
-      bedrock_model.go    # Line 2
+      model_info.go       # Line 2 (non-Bedrock users)
+      bedrock_model.go    # Line 2 (Bedrock users)
       commits.go          # Line 2
       submodules.go       # Line 2
       version_info.go     # Line 2
@@ -119,6 +120,22 @@ Displays directory path (with `~` substitution), branch name, clean/dirty
 indicator, and worktree marker when applicable.
 
 Output: `~/myproject (main) [checkmark]`
+
+### Line 2: model_info
+
+Reads `.model.display_name` from the JSON input. Maps the model name to an
+emoji via case-insensitive substring matching: Opus -> brain, Sonnet -> music,
+Haiku -> zap, fallback -> robot. No external commands, no caching. This is
+the component for users who are not running through AWS Bedrock.
+
+| Pattern | Emoji |
+|---------|-------|
+| `*Opus*` | brain |
+| `*Sonnet*` | music |
+| `*Haiku*` | zap |
+| fallback | robot |
+
+Output: `[music] Claude 3.5 Sonnet`
 
 ### Line 2: bedrock_model
 
