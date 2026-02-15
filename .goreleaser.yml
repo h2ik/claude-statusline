@@ -43,7 +43,7 @@ changelog:
     - title: Other
       order: 999
 
-brews:
+homebrew_casks:
   - repository:
       owner: h2ik
       name: homebrew-tap
@@ -51,7 +51,9 @@ brews:
     name: claude-statusline
     homepage: https://github.com/h2ik/claude-statusline
     description: Statusline for Claude Code terminal integration
-    license: MIT
-    install: |
-      system "/usr/bin/xattr", "-cr", "#{staged_path}" if OS.mac?
-      bin.install "claude-statusline"
+    binaries:
+      - claude-statusline
+    hooks:
+      pre:
+        install: |
+          system_command "/usr/bin/xattr", args: ["-cr", "#{staged_path}/claude-statusline"]
