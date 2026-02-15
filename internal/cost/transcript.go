@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -91,5 +92,32 @@ func scanFile(path string, cutoff time.Time) float64 {
 			)
 		}
 	}
+	return total
+}
+
+// ScanTranscripts walks the root directory (typically ~/.claude/projects/)
+// recursively, summing costs from all .jsonl files within the given duration.
+// Skips tool-results directories. Uses mtime pre-filtering to skip stale files.
+func ScanTranscripts(root string, duration time.Duration) float64 {
+	cutoff := time.Now().Add(-duration)
+	var total float64
+
+	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() && info.Name() == "tool-results" {
+			return filepath.SkipDir
+		}
+		if info.IsDir() || filepath.Ext(path) != ".jsonl" {
+			return nil
+		}
+		if info.ModTime().Before(cutoff) {
+			return nil
+		}
+		total += scanFile(path, cutoff)
+		return nil
+	})
+
 	return total
 }

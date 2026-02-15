@@ -152,3 +152,77 @@ func TestScanFile_HandlesMalformedLines(t *testing.T) {
 		t.Errorf("expected %f, got %f", expected, cost)
 	}
 }
+
+func TestScanTranscripts_WalksDirectoryTree(t *testing.T) {
+	root := t.TempDir()
+	projectDir := filepath.Join(root, "-Users-test-project")
+	os.MkdirAll(projectDir, 0755)
+
+	os.WriteFile(filepath.Join(projectDir, "abc-123.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+	), 0644)
+
+	subagentDir := filepath.Join(projectDir, "abc-123", "subagents")
+	os.MkdirAll(subagentDir, 0755)
+	os.WriteFile(filepath.Join(subagentDir, "agent-xyz.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`+"\n",
+	), 0644)
+
+	total := ScanTranscripts(root, 30*24*time.Hour)
+	expected := 0.0175 + 0.0025
+	if total < expected-0.0001 || total > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, total)
+	}
+}
+
+func TestScanTranscripts_SkipsNonJSONL(t *testing.T) {
+	root := t.TempDir()
+	projectDir := filepath.Join(root, "-Users-test")
+	os.MkdirAll(projectDir, 0755)
+	os.WriteFile(filepath.Join(projectDir, "notes.txt"), []byte("not jsonl"), 0644)
+	os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+	), 0644)
+
+	total := ScanTranscripts(root, 30*24*time.Hour)
+	expected := 0.0175
+	if total < expected-0.0001 || total > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, total)
+	}
+}
+
+func TestScanTranscripts_EmptyDirectory(t *testing.T) {
+	total := ScanTranscripts(t.TempDir(), 30*24*time.Hour)
+	if total != 0.0 {
+		t.Errorf("expected 0.0, got %f", total)
+	}
+}
+
+func TestScanTranscripts_MissingDirectory(t *testing.T) {
+	total := ScanTranscripts("/nonexistent/path", 30*24*time.Hour)
+	if total != 0.0 {
+		t.Errorf("expected 0.0, got %f", total)
+	}
+}
+
+func TestScanTranscripts_SkipsToolResultsDir(t *testing.T) {
+	root := t.TempDir()
+	projectDir := filepath.Join(root, "-Users-test-project")
+
+	toolDir := filepath.Join(projectDir, "abc-123", "tool-results")
+	os.MkdirAll(toolDir, 0755)
+	os.WriteFile(filepath.Join(toolDir, "result.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":99999,"output_tokens":99999,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+	), 0644)
+
+	os.MkdirAll(projectDir, 0755)
+	os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+	), 0644)
+
+	total := ScanTranscripts(root, 30*24*time.Hour)
+	expected := 0.00175
+	if total < expected-0.0001 || total > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, total)
+	}
+}
