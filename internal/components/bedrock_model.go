@@ -81,7 +81,9 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	}
 
 	cmd := exec.Command("aws", args...)
-	cmd.Env = append(os.Environ(), c.settings.CommandEnv()...)
+	if c.settings != nil {
+		cmd.Env = append(os.Environ(), c.settings.CommandEnv()...)
+	}
 
 	output, err := cmd.Output()
 	if err != nil {
