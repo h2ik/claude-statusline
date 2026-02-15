@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 
+	"github.com/h2ik/claude-statusline/internal/config"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -11,11 +12,12 @@ import (
 // thresholds: green (<50%), yellow (50-74%), red (75-89%), and red + warning (90%+).
 type ContextWindow struct {
 	renderer *render.Renderer
+	config   *config.Config
 }
 
 // NewContextWindow creates a new ContextWindow component.
-func NewContextWindow(r *render.Renderer) *ContextWindow {
-	return &ContextWindow{renderer: r}
+func NewContextWindow(r *render.Renderer, cfg *config.Config) *ContextWindow {
+	return &ContextWindow{renderer: r, config: cfg}
 }
 
 // Name returns the component identifier.
@@ -46,9 +48,10 @@ func (c *ContextWindow) Render(in *input.StatusLineInput) string {
 		colorFunc = c.renderer.Green
 	}
 
-	// Format with tokens if available
+	// Format with tokens if available and configured
 	tokens := ""
-	if in.ContextWindow.ContextWindowSize > 0 {
+	showTokens := c.config.GetBool("context_window", "show_tokens", true)
+	if showTokens && in.ContextWindow.ContextWindowSize > 0 {
 		used := float64(pct) / 100.0 * float64(in.ContextWindow.ContextWindowSize)
 		tokens = fmt.Sprintf(" (%.0fK/%dK)",
 			used/1000.0,

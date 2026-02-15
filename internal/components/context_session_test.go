@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/h2ik/claude-statusline/internal/config"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -14,7 +15,8 @@ import (
 
 func TestContextWindow_Name(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	if c.Name() != "context_window" {
 		t.Errorf("expected 'context_window', got %q", c.Name())
@@ -23,7 +25,8 @@ func TestContextWindow_Name(t *testing.T) {
 
 func TestContextWindow_Render_EmptyWhenZeroPercent(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -39,7 +42,8 @@ func TestContextWindow_Render_EmptyWhenZeroPercent(t *testing.T) {
 
 func TestContextWindow_Render_GreenZone(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -58,7 +62,8 @@ func TestContextWindow_Render_GreenZone(t *testing.T) {
 
 func TestContextWindow_Render_YellowZone(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -74,7 +79,8 @@ func TestContextWindow_Render_YellowZone(t *testing.T) {
 
 func TestContextWindow_Render_RedZone(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -90,7 +96,8 @@ func TestContextWindow_Render_RedZone(t *testing.T) {
 
 func TestContextWindow_Render_WarningAt95(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -109,7 +116,8 @@ func TestContextWindow_Render_WarningAt95(t *testing.T) {
 
 func TestContextWindow_Render_WithTokenCounts(t *testing.T) {
 	r := render.New()
-	c := NewContextWindow(r)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -125,6 +133,62 @@ func TestContextWindow_Render_WithTokenCounts(t *testing.T) {
 	// 45% of 200000 = 90000 tokens = 90K
 	if !strings.Contains(output, "90K/200K") {
 		t.Errorf("expected '90K/200K' token count in output, got: %s", output)
+	}
+}
+
+func TestContextWindow_Render_HidesTokensWhenConfigured(t *testing.T) {
+	r := render.New()
+	falseVal := false
+	cfg := &config.Config{
+		Components: map[string]config.ComponentConfig{
+			"context_window": {
+				ShowTokens: &falseVal,
+			},
+		},
+	}
+	c := NewContextWindow(r, cfg)
+
+	in := &input.StatusLineInput{
+		ContextWindow: input.ContextWindow{
+			UsedPercentage:    45,
+			ContextWindowSize: 200000,
+		},
+	}
+
+	output := c.Render(in)
+	// Percentage should still be present
+	if !strings.Contains(output, "45%") {
+		t.Errorf("expected '45%%' in output, got: %s", output)
+	}
+	// Token counts should NOT be present
+	if strings.Contains(output, "90K") {
+		t.Errorf("expected no token count '90K' in output when show_tokens=false, got: %s", output)
+	}
+	if strings.Contains(output, "200K") {
+		t.Errorf("expected no token count '200K' in output when show_tokens=false, got: %s", output)
+	}
+}
+
+func TestContextWindow_Render_ShowsTokensByDefault(t *testing.T) {
+	r := render.New()
+	// Empty config - no explicit show_tokens setting, should default to true
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg)
+
+	in := &input.StatusLineInput{
+		ContextWindow: input.ContextWindow{
+			UsedPercentage:    45,
+			ContextWindowSize: 200000,
+		},
+	}
+
+	output := c.Render(in)
+	if !strings.Contains(output, "45%") {
+		t.Errorf("expected '45%%' in output, got: %s", output)
+	}
+	// 45% of 200000 = 90000 tokens = 90K
+	if !strings.Contains(output, "90K/200K") {
+		t.Errorf("expected '90K/200K' token count in output with default config, got: %s", output)
 	}
 }
 

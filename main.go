@@ -60,7 +60,7 @@ func main() {
 	registry.Register(components.NewCostWeekly(r, scanner))
 	registry.Register(components.NewCostDaily(r, scanner))
 	registry.Register(components.NewCostLive(r, h))
-	registry.Register(components.NewContextWindow(r))
+	registry.Register(components.NewContextWindow(r, cfg))
 	registry.Register(components.NewSessionMode(r))
 
 	// Use config-defined layout
