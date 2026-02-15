@@ -8,6 +8,7 @@ import (
 	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/component"
 	"github.com/h2ik/claude-statusline/internal/components"
+	"github.com/h2ik/claude-statusline/internal/config"
 	"github.com/h2ik/claude-statusline/internal/cost"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
@@ -32,6 +33,14 @@ func main() {
 	h := cost.NewHistory(filepath.Join(costDir, "history.jsonl"))
 	scanner := cost.NewTranscriptScanner(projectsDir, c)
 
+	// Load configuration
+	configPath := filepath.Join(homeDir, ".claude", "statusline", "config.toml")
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Create registry and register components
 	registry := component.NewRegistry()
 
@@ -54,12 +63,8 @@ func main() {
 	registry.Register(components.NewContextWindow(r))
 	registry.Register(components.NewSessionMode(r))
 
-	// Define line layout
-	lines := [][]string{
-		{"repo_info"},
-		{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"},
-		{"cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"},
-	}
+	// Use config-defined layout
+	lines := cfg.Layout.Lines
 
 	// Render each line
 	var renderedLines [][]string
