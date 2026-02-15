@@ -15,6 +15,12 @@ import (
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	// Read JSON from stdin
 	in, err := input.ParseInput(os.Stdin)
