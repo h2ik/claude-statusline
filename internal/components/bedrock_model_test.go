@@ -15,7 +15,7 @@ func TestBedrockModel_Name(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg)
+	bm := NewBedrockModel(r, c, cfg, nil)
 
 	if bm.Name() != "bedrock_model" {
 		t.Errorf("expected 'bedrock_model', got %q", bm.Name())
@@ -27,7 +27,7 @@ func TestBedrockModel_Render_EmptyForNonARN(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg)
+	bm := NewBedrockModel(r, c, cfg, nil)
 
 	in := &input.StatusLineInput{
 		Model: input.ModelInfo{
@@ -46,7 +46,7 @@ func TestBedrockModel_Render_ShowsRegionByDefault(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg)
+	bm := NewBedrockModel(r, c, cfg, nil)
 
 	in := &input.StatusLineInput{
 		Model: input.ModelInfo{
@@ -71,7 +71,7 @@ func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
 		},
 	}
 
-	bm := NewBedrockModel(r, c, cfg)
+	bm := NewBedrockModel(r, c, cfg, nil)
 
 	in := &input.StatusLineInput{
 		Model: input.ModelInfo{

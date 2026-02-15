@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
+	"github.com/h2ik/claude-statusline/internal/claude"
 	"github.com/h2ik/claude-statusline/internal/component"
 	"github.com/h2ik/claude-statusline/internal/components"
 	"github.com/h2ik/claude-statusline/internal/config"
@@ -24,6 +25,7 @@ func main() {
 
 	// Initialize infrastructure
 	homeDir, _ := os.UserHomeDir()
+	claudeSettings, _ := claude.LoadSettings(filepath.Join(homeDir, ".claude", "settings.json"))
 	cacheDir := filepath.Join(homeDir, ".cache", "claude-statusline")
 	costDir := filepath.Join(homeDir, ".claude", "statusline", "costs")
 	projectsDir := filepath.Join(homeDir, ".claude", "projects")
@@ -49,7 +51,7 @@ func main() {
 
 	// Line 2 components
 	registry.Register(components.NewModelInfo(r))
-	registry.Register(components.NewBedrockModel(r, c, cfg))
+	registry.Register(components.NewBedrockModel(r, c, cfg, claudeSettings))
 	registry.Register(components.NewCommits(r))
 	registry.Register(components.NewSubmodules(r))
 	registry.Register(components.NewVersionInfo(r, c))

@@ -2,11 +2,13 @@ package components
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
+	"github.com/h2ik/claude-statusline/internal/claude"
 	"github.com/h2ik/claude-statusline/internal/config"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
@@ -19,11 +21,12 @@ type BedrockModel struct {
 	renderer *render.Renderer
 	cache    *cache.Cache
 	config   *config.Config
+	settings *claude.Settings
 }
 
-// NewBedrockModel creates a new BedrockModel component with the given renderer, cache, and config.
-func NewBedrockModel(r *render.Renderer, c *cache.Cache, cfg *config.Config) *BedrockModel {
-	return &BedrockModel{renderer: r, cache: c, config: cfg}
+// NewBedrockModel creates a new BedrockModel component with the given renderer, cache, config, and optional Claude settings.
+func NewBedrockModel(r *render.Renderer, c *cache.Cache, cfg *config.Config, s *claude.Settings) *BedrockModel {
+	return &BedrockModel{renderer: r, cache: c, config: cfg, settings: s}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -52,14 +55,12 @@ func (c *BedrockModel) Render(in *input.StatusLineInput) string {
 // and region, using the cache to avoid repeated AWS CLI calls.
 // The cache stores "name\tregion" so both values survive round-trips.
 func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
-	// Extract region from ARN (always available)
 	parts := strings.Split(arn, ":")
 	region := ""
 	if len(parts) >= 4 {
 		region = parts[3]
 	}
 
-	// Check cache — stored as "name\tregion"
 	cached, err := c.cache.Get("bedrock:"+arn, 24*time.Hour)
 	if err == nil {
 		fields := strings.SplitN(string(cached), "\t", 2)
@@ -69,11 +70,17 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 		return string(cached), region
 	}
 
-	// Resolve via AWS CLI
-	cmd := exec.Command("aws", "bedrock", "get-inference-profile",
+	args := []string{"bedrock", "get-inference-profile",
 		"--inference-profile-identifier", arn,
 		"--query", "models[0].modelArn",
-		"--output", "text")
+		"--output", "text"}
+
+	if c.settings != nil && c.settings.AWSRegion != "" {
+		args = append(args, "--region", c.settings.AWSRegion)
+	}
+
+	cmd := exec.Command("aws", args...)
+	cmd.Env = append(os.Environ(), c.settings.CommandEnv()...)
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -85,7 +92,6 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	modelARN := strings.TrimSpace(string(output))
 	friendlyName := c.getFriendlyName(modelARN)
 
-	// Cache as "name\tregion"
 	c.cache.Set("bedrock:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
 	return friendlyName, region
