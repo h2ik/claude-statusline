@@ -3,6 +3,7 @@ package components
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/config"
@@ -86,5 +87,52 @@ func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
 	// Should still contain the model name (falls back to "Bedrock Model" since aws CLI isn't available)
 	if !strings.Contains(output, "Bedrock Model") {
 		t.Errorf("expected 'Bedrock Model' in output even with region hidden, got: %s", output)
+	}
+}
+
+func TestGetFriendlyName_FromCatalog(t *testing.T) {
+	r := render.New()
+	cacheDir := t.TempDir()
+	c := cache.New(cacheDir)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	// Pre-seed the cache with a model catalog
+	catalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"},{"id":"anthropic.claude-sonnet-4-20250514-v1:0","name":"Claude Sonnet 4"}]`
+	c.Set("bedrock:model-catalog", []byte(catalog), 24*time.Hour)
+
+	bm := NewBedrockModel(r, c, cfg, nil)
+
+	// Should match via catalog
+	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-opus-4-6-v1")
+	if name != "Claude Opus 4.6" {
+		t.Errorf("expected 'Claude Opus 4.6', got %q", name)
+	}
+}
+
+func TestGetFriendlyName_FallbackToHardcoded(t *testing.T) {
+	r := render.New()
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	// No catalog in cache — should fall back to hardcoded map
+	bm := NewBedrockModel(r, c, cfg, nil)
+
+	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-sonnet-4-20250514-v1:0")
+	if name != "Claude Sonnet 4" {
+		t.Errorf("expected 'Claude Sonnet 4' from hardcoded fallback, got %q", name)
+	}
+}
+
+func TestGetFriendlyName_RawARNFallback(t *testing.T) {
+	r := render.New()
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil)
+
+	// Totally unknown model — should return the raw ARN
+	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0")
+	if name != "arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0" {
+		t.Errorf("expected raw ARN passthrough, got %q", name)
 	}
 }

@@ -1,6 +1,7 @@
 package components
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -97,12 +98,67 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	return friendlyName, region
 }
 
-// getFriendlyName maps known model ARN fragments to human-readable names.
+// modelEntry represents a single model from the AWS API response.
+type modelEntry struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// loadModelCatalog returns the cached model catalog, or fetches it from
+// the AWS API. Returns nil if the catalog is unavailable.
+func (c *BedrockModel) loadModelCatalog() []modelEntry {
+	cached, err := c.cache.Get("bedrock:model-catalog", 24*time.Hour)
+	if err == nil {
+		var models []modelEntry
+		if json.Unmarshal(cached, &models) == nil {
+			return models
+		}
+	}
+
+	// Fetch from AWS CLI
+	args := []string{"bedrock", "list-foundation-models",
+		"--query", "modelSummaries[].{id:modelId,name:modelName}",
+		"--output", "json"}
+
+	if c.settings != nil && c.settings.AWSRegion != "" {
+		args = append(args, "--region", c.settings.AWSRegion)
+	}
+
+	cmd := exec.Command("aws", args...)
+	if c.settings != nil {
+		cmd.Env = append(os.Environ(), c.settings.CommandEnv()...)
+	}
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+
+	var models []modelEntry
+	if json.Unmarshal(output, &models) != nil {
+		return nil
+	}
+
+	c.cache.Set("bedrock:model-catalog", output, 24*time.Hour)
+	return models
+}
+
+// getFriendlyName resolves a model ARN to a human-readable name.
+// Checks the dynamic catalog first, falls back to a static map, then
+// returns the raw ARN if nothing matches.
 func (c *BedrockModel) getFriendlyName(modelARN string) string {
-	mapping := map[string]string{
-		"claude-opus-4-6":   "Claude Opus 4.6",
+	// Try dynamic catalog first
+	if catalog := c.loadModelCatalog(); catalog != nil {
+		for _, m := range catalog {
+			if strings.Contains(modelARN, m.ID) {
+				return m.Name
+			}
+		}
+	}
+
+	// Static fallback for offline/no-creds scenarios
+	fallback := map[string]string{
 		"claude-opus-4":     "Claude Opus 4",
-		"claude-sonnet-4-5": "Claude Sonnet 4.5",
 		"claude-sonnet-4":   "Claude Sonnet 4",
 		"claude-3-5-sonnet": "Claude 3.5 Sonnet",
 		"claude-3-5-haiku":  "Claude 3.5 Haiku",
@@ -110,7 +166,7 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 		"claude-3-opus":     "Claude 3 Opus",
 	}
 
-	for key, name := range mapping {
+	for key, name := range fallback {
 		if strings.Contains(modelARN, key) {
 			return name
 		}
