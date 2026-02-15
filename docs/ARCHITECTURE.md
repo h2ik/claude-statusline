@@ -51,6 +51,16 @@ File-based cache at `~/.cache/claude-statusline/`:
 - Claude version: 15min TTL
 - Transcript cost totals: 5min TTL (per duration)
 
+## Configuration
+
+TOML config at `~/.claude/statusline/config.toml`:
+- **Layout control:** which components appear on which lines via `[layout] lines`
+- **Per-component toggles:** `show_region` (bedrock_model), `show_tokens` (context_window)
+- **Auto-generated** with sensible defaults on first run
+- **Parsed by** `github.com/BurntSushi/toml`
+
+`main.go` builds layout lines from `cfg.Layout.Lines`. Components query their settings via `cfg.GetBool()`.
+
 ## External Commands
 
 - `git` - for repo info, branch, status, commits, submodules, worktree
