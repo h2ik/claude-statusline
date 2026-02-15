@@ -98,7 +98,7 @@ func TestGetFriendlyName_FromCatalog(t *testing.T) {
 
 	// Pre-seed the cache with a model catalog
 	catalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"},{"id":"anthropic.claude-sonnet-4-20250514-v1:0","name":"Claude Sonnet 4"}]`
-	c.Set("bedrock:model-catalog", []byte(catalog), 24*time.Hour)
+	_ = c.Set("bedrock:model-catalog", []byte(catalog), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil)
 

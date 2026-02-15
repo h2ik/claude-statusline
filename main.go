@@ -15,6 +15,7 @@ import (
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
+//nolint:unused // set via ldflags at build time by goreleaser
 var (
 	version = "dev"
 	commit  = "none"
@@ -91,5 +92,5 @@ func main() {
 
 	// Output final result
 	output := r.RenderLines(renderedLines)
-	fmt.Fprint(os.Stdout, output)
+	_, _ = fmt.Fprint(os.Stdout, output)
 }

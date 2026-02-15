@@ -132,7 +132,7 @@ func writeConfig(path string, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Write header comment
 	if _, err := f.WriteString("# Claude Code Statusline Configuration\n\n"); err != nil {

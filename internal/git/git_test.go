@@ -81,7 +81,7 @@ func TestIsClean(t *testing.T) {
 	}
 
 	testFile := filepath.Join(dir, "test.txt")
-	os.WriteFile(testFile, []byte("modified"), 0644)
+	_ = os.WriteFile(testFile, []byte("modified"), 0644)
 
 	clean, err = IsClean(dir)
 	if err != nil {

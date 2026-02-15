@@ -34,6 +34,6 @@ func (s *TranscriptScanner) CalculatePeriod(duration time.Duration) float64 {
 	}
 
 	total := ScanTranscripts(s.projectsDir, duration)
-	s.cache.Set(cacheKey, []byte(strconv.FormatFloat(total, 'f', 6, 64)), transcriptCacheTTL)
+	_ = s.cache.Set(cacheKey, []byte(strconv.FormatFloat(total, 'f', 6, 64)), transcriptCacheTTL)
 	return total
 }

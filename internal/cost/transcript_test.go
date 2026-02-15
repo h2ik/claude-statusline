@@ -89,7 +89,7 @@ func TestScanFile_ComputesCost(t *testing.T) {
 		`{"type":"user","message":{"role":"user","content":"hello"},"timestamp":"2026-02-15T10:00:01.000Z"}`,
 		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
 	}
-	os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
 
 	cutoff := time.Date(2026, 2, 15, 0, 0, 0, 0, time.UTC)
 	cost := scanFile(path, cutoff)
@@ -107,7 +107,7 @@ func TestScanFile_FiltersOldEntries(t *testing.T) {
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-01-01T10:00:00.000Z"}`,
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
 	}
-	os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
 
 	cutoff := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
 	cost := scanFile(path, cutoff)
@@ -120,7 +120,7 @@ func TestScanFile_FiltersOldEntries(t *testing.T) {
 func TestScanFile_HandlesEmptyFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "empty.jsonl")
-	os.WriteFile(path, []byte(""), 0644)
+	_ = os.WriteFile(path, []byte(""), 0644)
 	cost := scanFile(path, time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
 	if cost != 0.0 {
 		t.Errorf("expected 0.0, got %f", cost)
@@ -143,7 +143,7 @@ func TestScanFile_HandlesMalformedLines(t *testing.T) {
 		``,
 		`another bad line`,
 	}
-	os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
 
 	cutoff := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
 	cost := scanFile(path, cutoff)
@@ -156,15 +156,15 @@ func TestScanFile_HandlesMalformedLines(t *testing.T) {
 func TestScanTranscripts_WalksDirectoryTree(t *testing.T) {
 	root := t.TempDir()
 	projectDir := filepath.Join(root, "-Users-test-project")
-	os.MkdirAll(projectDir, 0755)
+	_ = os.MkdirAll(projectDir, 0755)
 
-	os.WriteFile(filepath.Join(projectDir, "abc-123.jsonl"), []byte(
+	_ = os.WriteFile(filepath.Join(projectDir, "abc-123.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
 	subagentDir := filepath.Join(projectDir, "abc-123", "subagents")
-	os.MkdirAll(subagentDir, 0755)
-	os.WriteFile(filepath.Join(subagentDir, "agent-xyz.jsonl"), []byte(
+	_ = os.MkdirAll(subagentDir, 0755)
+	_ = os.WriteFile(filepath.Join(subagentDir, "agent-xyz.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`+"\n",
 	), 0644)
 
@@ -178,9 +178,9 @@ func TestScanTranscripts_WalksDirectoryTree(t *testing.T) {
 func TestScanTranscripts_SkipsNonJSONL(t *testing.T) {
 	root := t.TempDir()
 	projectDir := filepath.Join(root, "-Users-test")
-	os.MkdirAll(projectDir, 0755)
-	os.WriteFile(filepath.Join(projectDir, "notes.txt"), []byte("not jsonl"), 0644)
-	os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
+	_ = os.MkdirAll(projectDir, 0755)
+	_ = os.WriteFile(filepath.Join(projectDir, "notes.txt"), []byte("not jsonl"), 0644)
+	_ = os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
@@ -210,13 +210,13 @@ func TestScanTranscripts_SkipsToolResultsDir(t *testing.T) {
 	projectDir := filepath.Join(root, "-Users-test-project")
 
 	toolDir := filepath.Join(projectDir, "abc-123", "tool-results")
-	os.MkdirAll(toolDir, 0755)
-	os.WriteFile(filepath.Join(toolDir, "result.jsonl"), []byte(
+	_ = os.MkdirAll(toolDir, 0755)
+	_ = os.WriteFile(filepath.Join(toolDir, "result.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":99999,"output_tokens":99999,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
-	os.MkdirAll(projectDir, 0755)
-	os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
+	_ = os.MkdirAll(projectDir, 0755)
+	_ = os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 

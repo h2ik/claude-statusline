@@ -38,12 +38,12 @@ func TestCache_GetExpired(t *testing.T) {
 
 	// Write cache file with old mtime
 	path := c.path(key)
-	os.MkdirAll(filepath.Dir(path), 0755)
-	os.WriteFile(path, value, 0644)
+	_ = os.MkdirAll(filepath.Dir(path), 0755)
+	_ = os.WriteFile(path, value, 0644)
 
 	// Set mtime to 2 hours ago
 	oldTime := time.Now().Add(-2 * time.Hour)
-	os.Chtimes(path, oldTime, oldTime)
+	_ = os.Chtimes(path, oldTime, oldTime)
 
 	// Try to get with 1 hour TTL
 	_, err := c.Get(key, 1*time.Hour)

@@ -34,7 +34,7 @@ func (h *History) Append(entry Entry) error {
 	if err != nil {
 		return fmt.Errorf("open failed: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	data, err := json.Marshal(entry)
 	if err != nil {
@@ -82,7 +82,7 @@ func (h *History) maybeCompact() {
 			kept = append(kept, line)
 		}
 	}
-	f.Close()
+	_ = f.Close()
 
 	// Rewrite the file atomically via temp file
 	tmp := h.path + ".tmp"
@@ -91,14 +91,14 @@ func (h *History) maybeCompact() {
 		return
 	}
 	for _, line := range kept {
-		out.Write(append(line, '\n'))
+		_, _ = out.Write(append(line, '\n'))
 	}
-	out.Close()
+	_ = out.Close()
 
-	os.Rename(tmp, h.path)
+	_ = os.Rename(tmp, h.path)
 
 	// Touch the compaction marker
-	os.WriteFile(marker, nil, 0600)
+	_ = os.WriteFile(marker, nil, 0600)
 }
 
 // Deprecated: Period costs are now computed by TranscriptScanner which reads
@@ -115,7 +115,7 @@ func (h *History) CalculatePeriod(duration time.Duration) (float64, error) {
 		}
 		return 0.0, fmt.Errorf("open failed: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	cutoff := time.Now().Add(-duration)
 	// Track the latest cost per session (last write wins)

@@ -48,8 +48,8 @@ func TestCostMonthly_Render_EmptyHistory(t *testing.T) {
 func TestCostMonthly_Render_WithEntries(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
-	os.MkdirAll(projDir, 0755)
-	os.WriteFile(filepath.Join(projDir, "session.jsonl"), []byte(
+	_ = os.MkdirAll(projDir, 0755)
+	_ = os.WriteFile(filepath.Join(projDir, "session.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-24*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 
@@ -100,11 +100,11 @@ func TestCostWeekly_Render_EmptyHistory(t *testing.T) {
 func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
-	os.MkdirAll(projDir, 0755)
-	os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
+	_ = os.MkdirAll(projDir, 0755)
+	_ = os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
-	os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
+	_ = os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-10*24*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 
@@ -155,11 +155,11 @@ func TestCostDaily_Render_EmptyHistory(t *testing.T) {
 func TestCostDaily_Render_FiltersOldEntries(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
-	os.MkdirAll(projDir, 0755)
-	os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
+	_ = os.MkdirAll(projDir, 0755)
+	_ = os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-6*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
-	os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
+	_ = os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 

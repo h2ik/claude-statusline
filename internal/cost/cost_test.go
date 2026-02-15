@@ -40,7 +40,7 @@ func TestCalculatePeriodCost(t *testing.T) {
 	}
 
 	for _, e := range entries {
-		h.Append(e)
+		_ = h.Append(e)
 	}
 
 	cost, err := h.CalculatePeriod(24 * time.Hour)

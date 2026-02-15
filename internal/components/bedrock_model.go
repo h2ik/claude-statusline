@@ -88,14 +88,14 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	output, err := cmd.Output()
 	if err != nil {
 		name := "Bedrock Model"
-		c.cache.Set("bedrock:"+arn, []byte(name+"\t"+region), 24*time.Hour)
+		_ = c.cache.Set("bedrock:"+arn, []byte(name+"\t"+region), 24*time.Hour)
 		return name, region
 	}
 
 	modelARN := strings.TrimSpace(string(output))
 	friendlyName := c.getFriendlyName(modelARN)
 
-	c.cache.Set("bedrock:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
+	_ = c.cache.Set("bedrock:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
 	return friendlyName, region
 }
@@ -141,7 +141,7 @@ func (c *BedrockModel) loadModelCatalog() []modelEntry {
 		return nil
 	}
 
-	c.cache.Set("bedrock:model-catalog", output, 24*time.Hour)
+	_ = c.cache.Set("bedrock:model-catalog", output, 24*time.Hour)
 	return models
 }
 

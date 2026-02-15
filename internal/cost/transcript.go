@@ -69,7 +69,7 @@ func scanFile(path string, cutoff time.Time) float64 {
 	if err != nil {
 		return 0.0
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var total float64
 	scanner := bufio.NewScanner(f)
@@ -102,7 +102,7 @@ func ScanTranscripts(root string, duration time.Duration) float64 {
 	cutoff := time.Now().Add(-duration)
 	var total float64
 
-	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}

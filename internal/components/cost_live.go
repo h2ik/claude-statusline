@@ -35,7 +35,7 @@ func (c *CostLive) Render(in *input.StatusLineInput) string {
 			Cost:      in.Cost.TotalCostUSD,
 			Timestamp: time.Now(),
 		}
-		c.history.Append(entry)
+		_ = c.history.Append(entry)
 	}
 
 	// Display live session cost

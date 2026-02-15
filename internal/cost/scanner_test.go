@@ -12,8 +12,8 @@ import (
 func TestTranscriptScanner_ComputesCost(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
-	os.MkdirAll(projDir, 0755)
-	os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
+	_ = os.MkdirAll(projDir, 0755)
+	_ = os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
@@ -30,8 +30,8 @@ func TestTranscriptScanner_ComputesCost(t *testing.T) {
 func TestTranscriptScanner_UsesCacheOnSecondCall(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
-	os.MkdirAll(projDir, 0755)
-	os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
+	_ = os.MkdirAll(projDir, 0755)
+	_ = os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
@@ -39,7 +39,7 @@ func TestTranscriptScanner_UsesCacheOnSecondCall(t *testing.T) {
 	scanner := NewTranscriptScanner(projectsDir, c)
 
 	first := scanner.CalculatePeriod(30 * 24 * time.Hour)
-	os.Remove(filepath.Join(projDir, "s1.jsonl"))
+	_ = os.Remove(filepath.Join(projDir, "s1.jsonl"))
 	second := scanner.CalculatePeriod(30 * 24 * time.Hour)
 
 	if first != second {
@@ -50,8 +50,8 @@ func TestTranscriptScanner_UsesCacheOnSecondCall(t *testing.T) {
 func TestTranscriptScanner_DifferentDurationsUseDifferentCacheKeys(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
-	os.MkdirAll(projDir, 0755)
-	os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
+	_ = os.MkdirAll(projDir, 0755)
+	_ = os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 

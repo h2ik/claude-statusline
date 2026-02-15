@@ -61,7 +61,7 @@ func (c *VersionInfo) getClaudeVersion() string {
 	version = strings.TrimPrefix(version, "v")
 
 	// Cache it
-	c.cache.Set("claude-version", []byte(version), 15*time.Minute)
+	_ = c.cache.Set("claude-version", []byte(version), 15*time.Minute)
 
 	return version
 }
