@@ -101,6 +101,9 @@ func (h *History) maybeCompact() {
 	os.WriteFile(marker, nil, 0600)
 }
 
+// Deprecated: Period costs are now computed by TranscriptScanner which reads
+// Claude Code's native JSONL transcript files directly for accurate totals.
+//
 // CalculatePeriod returns the total cost of unique sessions within the given
 // duration from now. When a session appears multiple times (cost_live appends
 // on every render), the last entry wins because it has the most up-to-date cost.
