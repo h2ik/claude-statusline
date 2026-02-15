@@ -44,10 +44,18 @@ Period cost components (30DAY, 7DAY, DAY) compute costs by scanning Claude Code'
 
 `CostLive` continues using `History` (append-only JSONL at `~/.claude/statusline/costs/history.jsonl`) to display the current session's cost as reported by Claude Code's stdin JSON.
 
+## Claude Settings Integration
+
+`internal/claude/` reads `~/.claude/settings.json` to extract AWS env vars
+(`AWS_PROFILE`, `AWS_REGION`, `CLAUDE_CODE_USE_BEDROCK`) from the `.env` block.
+Settings are loaded once at startup and injected into AWS CLI calls by the
+`BedrockModel` component. Missing or unreadable settings degrade gracefully.
+
 ## Caching
 
 File-based cache at `~/.cache/claude-statusline/`:
 - Bedrock model resolution: 24h TTL
+- Bedrock model catalog: 24h TTL
 - Claude version: 15min TTL
 - Transcript cost totals: 5min TTL (per duration)
 
@@ -64,7 +72,7 @@ TOML config at `~/.claude/statusline/config.toml`:
 ## External Commands
 
 - `git` - for repo info, branch, status, commits, submodules, worktree
-- `aws` - for Bedrock model resolution (optional)
+- `aws` - for Bedrock model resolution and model catalog (optional; reads auth from `~/.claude/settings.json`)
 - `claude` - for version info (optional)
 
 Failures degrade gracefully.
