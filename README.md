@@ -11,12 +11,35 @@ Fast Go-based statusline for Claude Code, replacing the shell-based implementati
 
 ## Installation
 
+### Homebrew (recommended)
+
+```bash
+brew install --cask h2ik/tap/claude-statusline
+```
+
+The cask installs the `claude-statusline` binary to your system.
+
+### From source
+
 ```bash
 go build -o claude-statusline .
 cp claude-statusline ~/.local/bin/
 ```
 
-Update `~/.claude/settings.json`:
+## Claude Code Setup
+
+Add the following to your `~/.claude/settings.json` to enable the statusline:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "claude-statusline"
+  }
+}
+```
+
+If you installed from source to a non-PATH location, use the full path instead:
 
 ```json
 {
@@ -26,6 +49,9 @@ Update `~/.claude/settings.json`:
   }
 }
 ```
+
+Claude Code pipes JSON to stdin on each render cycle. The statusline reads this
+input, resolves model/cost/repo data, and writes styled output to stdout.
 
 ## Layout
 
