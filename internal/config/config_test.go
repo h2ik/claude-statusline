@@ -24,9 +24,9 @@ func TestLoad_CreatesDefaultWhenMissing(t *testing.T) {
 		t.Fatal("expected config file to be created, but it does not exist")
 	}
 
-	// Should have 3 lines in layout
-	if len(cfg.Layout.Lines) != 3 {
-		t.Fatalf("expected 3 layout lines, got %d", len(cfg.Layout.Lines))
+	// Should have 4 lines in layout
+	if len(cfg.Layout.Lines) != 4 {
+		t.Fatalf("expected 4 layout lines, got %d", len(cfg.Layout.Lines))
 	}
 
 	// Verify line 1
@@ -53,6 +53,17 @@ func TestLoad_CreatesDefaultWhenMissing(t *testing.T) {
 	for i, comp := range expectedLine3 {
 		if cfg.Layout.Lines[2][i] != comp {
 			t.Errorf("line 3[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[2][i])
+		}
+	}
+
+	// Verify line 4
+	expectedLine4 := []string{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"}
+	if len(cfg.Layout.Lines[3]) != len(expectedLine4) {
+		t.Fatalf("line 4: expected %d components, got %d", len(expectedLine4), len(cfg.Layout.Lines[3]))
+	}
+	for i, comp := range expectedLine4 {
+		if cfg.Layout.Lines[3][i] != comp {
+			t.Errorf("line 4[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[3][i])
 		}
 	}
 }
@@ -168,9 +179,9 @@ func TestDefaultConfig(t *testing.T) {
 		t.Fatal("DefaultConfig() returned nil")
 	}
 
-	// Should have 3 lines
-	if len(cfg.Layout.Lines) != 3 {
-		t.Fatalf("expected 3 layout lines, got %d", len(cfg.Layout.Lines))
+	// Should have 4 lines
+	if len(cfg.Layout.Lines) != 4 {
+		t.Fatalf("expected 4 layout lines, got %d", len(cfg.Layout.Lines))
 	}
 
 	// Verify line 1
@@ -200,6 +211,17 @@ func TestDefaultConfig(t *testing.T) {
 		}
 	}
 
+	// Verify line 4
+	expectedLine4 := []string{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"}
+	if len(cfg.Layout.Lines[3]) != len(expectedLine4) {
+		t.Fatalf("line 4: expected %d components, got %d", len(expectedLine4), len(cfg.Layout.Lines[3]))
+	}
+	for i, comp := range expectedLine4 {
+		if cfg.Layout.Lines[3][i] != comp {
+			t.Errorf("line 4[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[3][i])
+		}
+	}
+
 	// Verify default components exist
 	bmComp, ok := cfg.Components["bedrock_model"]
 	if !ok {
@@ -221,5 +243,23 @@ func TestDefaultConfig(t *testing.T) {
 	}
 	if *cwComp.ShowTokens != true {
 		t.Errorf("expected context_window.ShowTokens=true, got %v", *cwComp.ShowTokens)
+	}
+
+	// Verify code_productivity defaults
+	cpComp, ok := cfg.Components["code_productivity"]
+	if !ok {
+		t.Fatal("expected code_productivity in default Components")
+	}
+	if cpComp.ShowVelocity == nil {
+		t.Fatal("expected code_productivity.ShowVelocity to be set")
+	}
+	if *cpComp.ShowVelocity != true {
+		t.Errorf("expected code_productivity.ShowVelocity=true, got %v", *cpComp.ShowVelocity)
+	}
+	if cpComp.ShowCostPerLine == nil {
+		t.Fatal("expected code_productivity.ShowCostPerLine to be set")
+	}
+	if *cpComp.ShowCostPerLine != true {
+		t.Errorf("expected code_productivity.ShowCostPerLine=true, got %v", *cpComp.ShowCostPerLine)
 	}
 }

@@ -63,6 +63,12 @@ func main() {
 	registry.Register(components.NewContextWindow(r, cfg))
 	registry.Register(components.NewSessionMode(r))
 
+	// Line 4 components
+	registry.Register(components.NewBurnRate(r))
+	registry.Register(components.NewCacheEfficiency(r))
+	registry.Register(components.NewBlockProjection(r))
+	registry.Register(components.NewCodeProductivity(r, cfg))
+
 	// Use config-defined layout
 	lines := cfg.Layout.Lines
 

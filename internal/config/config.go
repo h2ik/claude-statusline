@@ -64,6 +64,8 @@ func Load(path string) (*Config, error) {
 func DefaultConfig() *Config {
 	showRegion := true
 	showTokens := true
+	showVelocity := true
+	showCostPerLine := true
 
 	return &Config{
 		Layout: Layout{
@@ -71,6 +73,7 @@ func DefaultConfig() *Config {
 				{"repo_info"},
 				{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"},
 				{"cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"},
+				{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"},
 			},
 		},
 		Components: map[string]ComponentConfig{
@@ -79,6 +82,10 @@ func DefaultConfig() *Config {
 			},
 			"context_window": {
 				ShowTokens: &showTokens,
+			},
+			"code_productivity": {
+				ShowVelocity:    &showVelocity,
+				ShowCostPerLine: &showCostPerLine,
 			},
 		},
 	}
