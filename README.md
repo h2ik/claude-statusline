@@ -1,23 +1,27 @@
 # claude-statusline
 
-Fast Go-based statusline for Claude Code, replacing the shell-based implementation.
+A fast, informative statusline for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — built in Go.
+
+![claude-statusline example](assets/example.png)
+
+## What It Does
+
+claude-statusline displays live session data directly in your Claude Code terminal: repository status, model info, cost tracking, context usage, and more. It replaces the default statusline with a richer, faster alternative styled with the Catppuccin Mocha theme.
 
 ## Features
 
-- **Fast:** Single binary, no subprocess spawning for most operations
-- **Cached:** AWS Bedrock resolution and version checks are cached
-- **Cost tracking:** Multi-period cost tracking (30day/7day/daily/live)
-- **Styled:** Catppuccin Mocha theme via lipgloss
+- **Fast** — Single compiled binary; no subprocess spawning
+- **Cached** — AWS Bedrock resolution and version checks avoid repeated lookups
+- **Cost tracking** — See spending across four windows: 30-day, 7-day, daily, and live
+- **Styled** — Catppuccin Mocha color theme via [lipgloss](https://github.com/charmbracelet/lipgloss)
 
-## Installation
+## Install
 
 ### Homebrew (recommended)
 
 ```bash
 brew install --cask h2ik/tap/claude-statusline
 ```
-
-The cask installs the `claude-statusline` binary to your system.
 
 ### From source
 
@@ -26,9 +30,9 @@ go build -o claude-statusline .
 cp claude-statusline ~/.local/bin/
 ```
 
-## Claude Code Setup
+## Setup
 
-Add the following to your `~/.claude/settings.json` to enable the statusline:
+Add this to your `~/.claude/settings.json`:
 
 ```json
 {
@@ -39,7 +43,7 @@ Add the following to your `~/.claude/settings.json` to enable the statusline:
 }
 ```
 
-If you installed from source to a non-PATH location, use the full path instead:
+If the binary isn't on your `PATH`, use the full path:
 
 ```json
 {
@@ -50,32 +54,24 @@ If you installed from source to a non-PATH location, use the full path instead:
 }
 ```
 
-Claude Code pipes JSON to stdin on each render cycle. The statusline reads this
-input, resolves model/cost/repo data, and writes styled output to stdout.
+Claude Code sends JSON to the statusline on each render cycle. The statusline reads that input, resolves model, cost, and repo data, then writes styled output back.
 
 ## Layout
 
-**Line 1:** Repository info (path, branch, clean/dirty status, worktree)
+The statusline renders four lines of information:
 
-**Line 2:** Model info, commits today, submodules, version, time
+| Line | Content |
+|------|---------|
+| **1** | Repository path, branch, clean/dirty status, worktree |
+| **2** | Model, commits today, submodules, version, time |
+| **3** | Cost (30-day, 7-day, daily, live), context window, output style |
+| **4** | Burn rate, cache efficiency, block projection, code productivity |
 
-**Line 3:** Cost tracking (30day, 7day, daily, live), context window, output style
-
-#### Line 4: Block Metrics + Code Stats
-
-- `burn_rate` - Current spending velocity ($/min)
-- `cache_efficiency` - Cache hit ratio with color coding
-- `block_projection` - Rate limit utilization (5h/7d windows)
-- `code_productivity` - Lines per minute and cost per line (configurable)
-
-**Note:** Line 4 components are most useful for direct Anthropic API users.
-Bedrock users will see graceful degradation (empty components) where rate
-limit data is unavailable.
+**Line 4** is most useful for direct Anthropic API users. Bedrock users will see empty components where rate-limit data is unavailable.
 
 ## Configuration
 
-The statusline reads configuration from `~/.claude/statusline/config.toml`.
-A default config is created automatically on first run.
+The statusline reads its config from `~/.claude/statusline/config.toml`. A default file is created on first run.
 
 ```toml
 # Claude Code Statusline Configuration
@@ -102,16 +98,19 @@ show_cost_per_line = true
 ## Development
 
 Run tests:
+
 ```bash
 go test ./...
 ```
 
 Build:
+
 ```bash
 go build -o claude-statusline .
 ```
 
 Test with sample input:
+
 ```bash
 echo '{"workspace":{"current_dir":"'$(pwd)'"},"model":{"display_name":"Claude"}}' | ./claude-statusline
 ```
