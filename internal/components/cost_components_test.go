@@ -121,7 +121,7 @@ func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
 }
 
 // ============================================================
-// CostDaily tests
+// CostDaily (CostToday) tests
 // ============================================================
 
 func TestCostDaily_Name(t *testing.T) {
@@ -147,18 +147,21 @@ func TestCostDaily_Render_EmptyHistory(t *testing.T) {
 	if !strings.Contains(output, "$0.00") {
 		t.Errorf("expected '$0.00' for empty history, got: %s", output)
 	}
-	if !strings.Contains(output, "DAY") {
-		t.Errorf("expected 'DAY' label in output, got: %s", output)
+	if !strings.Contains(output, "TODAY") {
+		t.Errorf("expected 'TODAY' label in output, got: %s", output)
 	}
 }
 
-func TestCostDaily_Render_FiltersOldEntries(t *testing.T) {
+func TestCostDaily_Render_IncludesTodayEntries(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
 	_ = os.MkdirAll(projDir, 0755)
+
+	// Entry from 1 hour ago (should always be today)
 	_ = os.WriteFile(filepath.Join(projDir, "recent.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-6*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
+		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-1*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
+	// Entry from 48 hours ago (never today)
 	_ = os.WriteFile(filepath.Join(projDir, "old.jsonl"), []byte(
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
@@ -172,7 +175,31 @@ func TestCostDaily_Render_FiltersOldEntries(t *testing.T) {
 	output := c.Render(in)
 	// Haiku: (2000*1+100*5)/1M = 0.0025
 	if !strings.Contains(output, "$0.00") {
-		t.Errorf("expected cost around $0.0025 (only recent entry), got: %s", output)
+		t.Errorf("expected cost around $0.0025 (only today's entry), got: %s", output)
+	}
+}
+
+func TestCostDaily_Render_ExcludesYesterdayEntries(t *testing.T) {
+	projectsDir := t.TempDir()
+	projDir := filepath.Join(projectsDir, "-Users-test")
+	_ = os.MkdirAll(projDir, 0755)
+
+	// Entry from yesterday at 23:00 — should be excluded even if < 24h ago
+	now := time.Now()
+	yesterday := time.Date(now.Year(), now.Month(), now.Day()-1, 23, 0, 0, 0, now.Location())
+	_ = os.WriteFile(filepath.Join(projDir, "yesterday.jsonl"), []byte(
+		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+yesterday.Format(time.RFC3339Nano)+`"}`+"\n",
+	), 0644)
+
+	r := render.New()
+	ca := cache.New(t.TempDir())
+	s := cost.NewTranscriptScanner(projectsDir, ca)
+	c := NewCostDaily(r, s)
+	in := &input.StatusLineInput{}
+
+	output := c.Render(in)
+	if !strings.Contains(output, "$0.00") {
+		t.Errorf("expected $0.00 for yesterday-only entries, got: %s", output)
 	}
 }
 

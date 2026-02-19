@@ -99,7 +99,13 @@ func scanFile(path string, cutoff time.Time) float64 {
 // recursively, summing costs from all .jsonl files within the given duration.
 // Skips tool-results directories. Uses mtime pre-filtering to skip stale files.
 func ScanTranscripts(root string, duration time.Duration) float64 {
-	cutoff := time.Now().Add(-duration)
+	return ScanTranscriptsSince(root, time.Now().Add(-duration))
+}
+
+// ScanTranscriptsSince walks the root directory recursively, summing costs
+// from all .jsonl files whose entries have timestamps after the given cutoff.
+// Skips tool-results directories. Uses mtime pre-filtering to skip stale files.
+func ScanTranscriptsSince(root string, cutoff time.Time) float64 {
 	var total float64
 
 	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {

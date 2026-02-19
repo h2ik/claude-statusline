@@ -58,14 +58,31 @@ func NewCostWeekly(r *render.Renderer, s *cost.TranscriptScanner) *CostPeriod {
 	}
 }
 
-// NewCostDaily creates a 24-hour rolling cost component.
-func NewCostDaily(r *render.Renderer, s *cost.TranscriptScanner) *CostPeriod {
-	return &CostPeriod{
+// CostToday renders the cost since midnight local time by scanning
+// Claude Code's native JSONL transcript files.
+type CostToday struct {
+	renderer *render.Renderer
+	scanner  *cost.TranscriptScanner
+}
+
+func (c *CostToday) Name() string {
+	return "cost_daily"
+}
+
+func (c *CostToday) Render(in *input.StatusLineInput) string {
+	total := c.scanner.CalculateToday()
+
+	return fmt.Sprintf("%s %s $%.2f",
+		"📅",
+		c.renderer.Dimmed("TODAY"),
+		total,
+	)
+}
+
+// NewCostDaily creates a component showing cost since midnight local time.
+func NewCostDaily(r *render.Renderer, s *cost.TranscriptScanner) *CostToday {
+	return &CostToday{
 		renderer: r,
 		scanner:  s,
-		name:     "cost_daily",
-		label:    "DAY",
-		emoji:    "📅",
-		duration: 24 * time.Hour,
 	}
 }
