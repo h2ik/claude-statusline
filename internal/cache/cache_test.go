@@ -29,6 +29,53 @@ func TestCache_SetGet(t *testing.T) {
 	}
 }
 
+func TestCache_Prune_RemovesOldFiles(t *testing.T) {
+	dir := t.TempDir()
+	c := New(dir)
+
+	// Create a cache entry and backdate it to 31 days ago
+	_ = c.Set("old-key", []byte("stale"), 0)
+	oldPath := c.path("old-key")
+	oldTime := time.Now().Add(-31 * 24 * time.Hour)
+	_ = os.Chtimes(oldPath, oldTime, oldTime)
+
+	// Create a fresh cache entry
+	_ = c.Set("new-key", []byte("fresh"), 0)
+
+	if err := c.Prune(30 * 24 * time.Hour); err != nil {
+		t.Fatalf("Prune failed: %v", err)
+	}
+
+	// Old file should be gone
+	if _, err := os.Stat(oldPath); !os.IsNotExist(err) {
+		t.Error("expected old cache file to be removed")
+	}
+
+	// Fresh file should still exist
+	newPath := c.path("new-key")
+	if _, err := os.Stat(newPath); err != nil {
+		t.Errorf("expected new cache file to still exist, got: %v", err)
+	}
+}
+
+func TestCache_Prune_EmptyDir(t *testing.T) {
+	dir := t.TempDir()
+	c := New(dir)
+
+	if err := c.Prune(30 * 24 * time.Hour); err != nil {
+		t.Fatalf("Prune on empty dir failed: %v", err)
+	}
+}
+
+func TestCache_Prune_MissingDir(t *testing.T) {
+	c := New("/nonexistent/cache/dir")
+
+	err := c.Prune(30 * 24 * time.Hour)
+	if err == nil {
+		t.Fatal("expected error for missing dir, got nil")
+	}
+}
+
 func TestCache_GetExpired(t *testing.T) {
 	dir := t.TempDir()
 	c := New(dir)

@@ -52,6 +52,31 @@ func (c *Cache) Get(key string, ttl time.Duration) ([]byte, error) {
 	return data, nil
 }
 
+// Prune removes cache files older than maxAge. Errors on individual
+// files are silently ignored so a single permission issue doesn't
+// prevent cleanup of the rest.
+func (c *Cache) Prune(maxAge time.Duration) error {
+	entries, err := os.ReadDir(c.dir)
+	if err != nil {
+		return fmt.Errorf("read cache dir: %w", err)
+	}
+
+	cutoff := time.Now().Add(-maxAge)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if info.ModTime().Before(cutoff) {
+			_ = os.Remove(filepath.Join(c.dir, entry.Name()))
+		}
+	}
+	return nil
+}
+
 func (c *Cache) path(key string) string {
 	hash := sha256.Sum256([]byte(key))
 	filename := hex.EncodeToString(hash[:])

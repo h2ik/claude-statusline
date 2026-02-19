@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/claude"
@@ -38,6 +39,7 @@ func main() {
 	projectsDir := filepath.Join(homeDir, ".claude", "projects")
 
 	c := cache.New(cacheDir)
+	_ = c.Prune(30 * 24 * time.Hour)
 	r := render.New()
 	h := cost.NewHistory(filepath.Join(costDir, "history.jsonl"))
 	scanner := cost.NewTranscriptScanner(projectsDir, c)
