@@ -25,6 +25,7 @@ var (
 type Renderer struct {
 	separator string
 	lg        *lipgloss.Renderer
+	style     Style
 }
 
 // New creates a Renderer with forced TrueColor output.
@@ -40,29 +41,46 @@ func New() *Renderer {
 	return &Renderer{
 		separator: " │ ",
 		lg:        lg,
+		style:     NewDefaultStyle(" │ "),
 	}
+}
+
+// SetStyle replaces the active rendering style (e.g. DefaultStyle, PowerlineStyle).
+func (r *Renderer) SetStyle(s Style) {
+	r.style = s
+}
+
+// RenderOutput renders a slice of LineData through the active Style, filtering
+// out lines that produce only whitespace. termWidth is passed to the Style so
+// powerline-mode can pad/align.
+func (r *Renderer) RenderOutput(lines []LineData, termWidth int) string {
+	var output []string
+	for _, line := range lines {
+		rendered := r.style.RenderLine(line, termWidth)
+		if strings.TrimSpace(rendered) != "" {
+			output = append(output, rendered)
+		}
+	}
+	return strings.Join(output, "\n")
 }
 
 // RenderLines joins components per line with separators, filtering out empty components
 // and lines that contain only empty components.
+// This is a backward-compatible wrapper around RenderOutput.
 func (r *Renderer) RenderLines(lines [][]string) string {
-	var output []string
-
-	for _, components := range lines {
+	var data []LineData
+	for _, line := range lines {
 		var nonEmpty []string
-		for _, c := range components {
+		for _, c := range line {
 			if strings.TrimSpace(c) != "" {
 				nonEmpty = append(nonEmpty, c)
 			}
 		}
-
 		if len(nonEmpty) > 0 {
-			line := strings.Join(nonEmpty, r.separator)
-			output = append(output, line)
+			data = append(data, LineData{Left: nonEmpty})
 		}
 	}
-
-	return strings.Join(output, "\n")
+	return r.RenderOutput(data, 80)
 }
 
 // Style helpers -- each wraps the input string with a Catppuccin Mocha color.
