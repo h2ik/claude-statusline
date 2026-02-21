@@ -11,9 +11,9 @@ type LineData struct {
 	RightNames []string
 }
 
-// LineStyle defines how a statusline line is rendered from its component outputs.
+// Style defines how a statusline line is rendered from its component outputs.
 // Implementations control separator choice, background colors, and alignment.
 // termWidth is the terminal column count (used for padding in powerline mode).
-type LineStyle interface {
+type Style interface {
 	RenderLine(line LineData, termWidth int) string
 }
