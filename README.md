@@ -14,6 +14,7 @@ claude-statusline displays live session data directly in your Claude Code termin
 - **Cached** — AWS Bedrock resolution and version checks avoid repeated lookups
 - **Cost tracking** — See spending across four windows: 30-day, 7-day, daily, and live
 - **Styled** — Catppuccin Mocha color theme via [lipgloss](https://github.com/charmbracelet/lipgloss)
+- **Powerline mode** — Optional powerline-style rendering with colored segments and right-aligned components (requires a [Nerd Font](https://www.nerdfonts.com/))
 
 ## Install
 
@@ -58,7 +59,7 @@ Claude Code sends JSON to the statusline on each render cycle. The statusline re
 
 ## Layout
 
-The statusline renders four lines of information:
+By default the statusline renders four lines of information:
 
 | Line | Content |
 |------|---------|
@@ -69,20 +70,36 @@ The statusline renders four lines of information:
 
 **Line 4** is most useful for direct Anthropic API users. Bedrock users will see empty components where rate-limit data is unavailable.
 
+### Styles
+
+Two rendering styles are available:
+
+- **`default`** — Components joined by `│` separators (no special font required)
+- **`powerline`** — Colored background segments with arrow separators and right-alignment support (requires a [Nerd Font](https://www.nerdfonts.com/))
+
+Powerline mode groups components into colored segments by category (info, cost, metrics, activity, meta) and supports placing components on the right side of the terminal.
+
 ## Configuration
 
 The statusline reads its config from `~/.claude/statusline/config.toml`. A default file is created on first run.
 
-```toml
-# Claude Code Statusline Configuration
+### Default style
 
+```toml
 [layout]
-lines = [
-  ["repo_info"],
-  ["bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"],
-  ["cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"],
-  ["burn_rate", "cache_efficiency", "block_projection", "code_productivity"],
-]
+style = "default"
+
+[[layout.lines]]
+left = ["repo_info"]
+
+[[layout.lines]]
+left = ["bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"]
+
+[[layout.lines]]
+left = ["cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"]
+
+[[layout.lines]]
+left = ["burn_rate", "cache_efficiency", "block_projection", "code_productivity"]
 
 [components.bedrock_model]
 show_region = true
@@ -94,6 +111,37 @@ show_tokens = true
 show_velocity = true
 show_cost_per_line = true
 ```
+
+### Powerline style
+
+Powerline mode uses colored background segments with arrow separators and supports placing components on the right side of the terminal. Requires a [Nerd Font](https://www.nerdfonts.com/).
+
+```toml
+[layout]
+style = "powerline"
+
+[[layout.lines]]
+left  = ["repo_info", "bedrock_model", "model_info"]
+right = ["commits", "submodules", "version_info", "time_display"]
+
+[[layout.lines]]
+left  = ["cost_monthly", "cost_weekly", "cost_daily", "cost_live"]
+right = ["context_window", "session_mode", "burn_rate", "cache_efficiency", "block_projection", "code_productivity"]
+
+[components.bedrock_model]
+show_region = true
+
+[components.context_window]
+show_tokens = true
+
+[components.code_productivity]
+show_velocity = true
+show_cost_per_line = true
+```
+
+Set the `COLUMNS` environment variable if right-alignment appears off (the statusline reads `$COLUMNS` to determine terminal width, defaulting to 80).
+
+> **Backward compatibility:** The old flat `lines = [["repo_info"], ...]` format is still supported and auto-migrated to the new format at load time.
 
 ## Development
 
