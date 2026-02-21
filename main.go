@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
@@ -80,19 +81,39 @@ func main() {
 	registry.Register(components.NewBlockProjection(r))
 	registry.Register(components.NewCodeProductivity(r, cfg))
 
-	// Use config-defined layout
-	lines := cfg.Layout.Lines
-
-	// Render each line using Left components (Right support added in future task)
-	var renderedLines [][]string
-	for _, line := range lines {
-		rendered := registry.RenderLine(in, line.Left)
-		if len(rendered) > 0 {
-			renderedLines = append(renderedLines, rendered)
+	// Select rendering style
+	switch cfg.Layout.Style {
+	case "powerline":
+		r.SetStyle(render.NewPowerlineStyle(r))
+	default:
+		if cfg.Layout.Style != "" && cfg.Layout.Style != "default" {
+			fmt.Fprintf(os.Stderr, "unknown style %q, falling back to default\n", cfg.Layout.Style)
 		}
 	}
 
-	// Output final result
-	output := r.RenderLines(renderedLines)
+	// Determine terminal width for right-side alignment
+	termWidth := 80
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if n, err := strconv.Atoi(cols); err == nil && n > 0 {
+			termWidth = n
+		}
+	}
+
+	// Render each line
+	var lineData []render.LineData
+	for _, line := range cfg.Layout.Lines {
+		leftNames, leftContent := registry.RenderNamedLine(in, line.Left)
+		rightNames, rightContent := registry.RenderNamedLine(in, line.Right)
+		if len(leftContent) > 0 || len(rightContent) > 0 {
+			lineData = append(lineData, render.LineData{
+				Left:       leftContent,
+				LeftNames:  leftNames,
+				Right:      rightContent,
+				RightNames: rightNames,
+			})
+		}
+	}
+
+	output := r.RenderOutput(lineData, termWidth)
 	_, _ = fmt.Fprint(os.Stdout, output)
 }
