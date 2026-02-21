@@ -17,7 +17,15 @@ type Config struct {
 
 // Layout defines which components appear on each line.
 type Layout struct {
-	Lines [][]string `toml:"lines"`
+	Style string       `toml:"style"`
+	Lines []LayoutLine `toml:"lines"`
+}
+
+// LayoutLine describes the left and right component groups for a single
+// statusline row.
+type LayoutLine struct {
+	Left  []string `toml:"left"`
+	Right []string `toml:"right"`
 }
 
 // ComponentConfig holds per-component configuration options.
@@ -29,9 +37,25 @@ type ComponentConfig struct {
 	ShowCostPerLine *bool `toml:"show_cost_per_line,omitempty"`
 }
 
+// legacyLayout mirrors the old flat lines format ([][]string) so we can detect
+// and auto-migrate configs written before left/right support was added.
+type legacyLayout struct {
+	Lines [][]string `toml:"lines"`
+}
+
+// legacyConfig is the full config shape using the old layout format.
+type legacyConfig struct {
+	Layout     legacyLayout               `toml:"layout"`
+	Components map[string]ComponentConfig `toml:"components"`
+}
+
 // Load reads a TOML configuration file from the given path.
 // If the file does not exist, it creates one with default values and returns
 // the default configuration.
+//
+// For backward compatibility, Load supports both the new left/right layout
+// format and the old flat lines format. Old-format configs are auto-migrated:
+// all components go to Left, Right stays empty, Style defaults to "default".
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -47,20 +71,62 @@ func Load(path string) (*Config, error) {
 		return cfg, nil
 	}
 
+	// First pass: try unmarshaling into the new Config struct (left/right format).
 	var cfg Config
-	if err := toml.Unmarshal(data, &cfg); err != nil {
+	newFmtErr := toml.Unmarshal(data, &cfg)
+
+	if newFmtErr == nil && len(cfg.Layout.Lines) > 0 {
+		// New format parsed successfully.
+		if cfg.Components == nil {
+			cfg.Components = make(map[string]ComponentConfig)
+		}
+		if cfg.Layout.Style == "" {
+			cfg.Layout.Style = "default"
+		}
+		return &cfg, nil
+	}
+
+	// Second pass: try the legacy flat [][]string format.
+	var legacy legacyConfig
+	if err := toml.Unmarshal(data, &legacy); err != nil {
+		// Neither format worked. Return the original new-format error if we
+		// had one, otherwise the legacy error.
+		if newFmtErr != nil {
+			return nil, newFmtErr
+		}
 		return nil, err
 	}
 
-	// Initialize Components map if nil after parsing
+	if len(legacy.Layout.Lines) > 0 {
+		// Migrate: all components go to Left, Right stays empty.
+		cfg.Layout.Style = "default"
+		cfg.Layout.Lines = make([]LayoutLine, len(legacy.Layout.Lines))
+		for i, line := range legacy.Layout.Lines {
+			cfg.Layout.Lines[i] = LayoutLine{
+				Left:  line,
+				Right: nil,
+			}
+		}
+		if legacy.Components != nil {
+			cfg.Components = legacy.Components
+		} else {
+			cfg.Components = make(map[string]ComponentConfig)
+		}
+		return &cfg, nil
+	}
+
+	// Neither format had lines -- return what we have with a default style.
 	if cfg.Components == nil {
 		cfg.Components = make(map[string]ComponentConfig)
 	}
-
+	if cfg.Layout.Style == "" {
+		cfg.Layout.Style = "default"
+	}
 	return &cfg, nil
 }
 
 // DefaultConfig returns a Config with the default layout and component settings.
+// The default layout places all components on the Left side with an empty Right.
 func DefaultConfig() *Config {
 	showRegion := true
 	showTokens := true
@@ -69,11 +135,49 @@ func DefaultConfig() *Config {
 
 	return &Config{
 		Layout: Layout{
-			Lines: [][]string{
-				{"repo_info"},
-				{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"},
-				{"cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"},
-				{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"},
+			Style: "default",
+			Lines: []LayoutLine{
+				{Left: []string{"repo_info"}},
+				{Left: []string{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"}},
+				{Left: []string{"cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"}},
+				{Left: []string{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"}},
+			},
+		},
+		Components: map[string]ComponentConfig{
+			"bedrock_model": {
+				ShowRegion: &showRegion,
+			},
+			"context_window": {
+				ShowTokens: &showTokens,
+			},
+			"code_productivity": {
+				ShowVelocity:    &showVelocity,
+				ShowCostPerLine: &showCostPerLine,
+			},
+		},
+	}
+}
+
+// DefaultPowerlineConfig returns a Config with a powerline-style layout that
+// uses both Left and Right component groups per line.
+func DefaultPowerlineConfig() *Config {
+	showRegion := true
+	showTokens := true
+	showVelocity := true
+	showCostPerLine := true
+
+	return &Config{
+		Layout: Layout{
+			Style: "powerline",
+			Lines: []LayoutLine{
+				{
+					Left:  []string{"repo_info", "bedrock_model", "model_info"},
+					Right: []string{"commits", "submodules", "version_info", "time_display"},
+				},
+				{
+					Left:  []string{"cost_monthly", "cost_weekly", "cost_daily", "cost_live"},
+					Right: []string{"context_window", "session_mode", "burn_rate", "cache_efficiency", "block_projection", "code_productivity"},
+				},
 			},
 		},
 		Components: map[string]ComponentConfig{

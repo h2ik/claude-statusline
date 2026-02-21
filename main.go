@@ -83,10 +83,10 @@ func main() {
 	// Use config-defined layout
 	lines := cfg.Layout.Lines
 
-	// Render each line
+	// Render each line using Left components (Right support added in future task)
 	var renderedLines [][]string
-	for _, lineComponents := range lines {
-		rendered := registry.RenderLine(in, lineComponents)
+	for _, line := range lines {
+		rendered := registry.RenderLine(in, line.Left)
 		if len(rendered) > 0 {
 			renderedLines = append(renderedLines, rendered)
 		}

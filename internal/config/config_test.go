@@ -29,41 +29,46 @@ func TestLoad_CreatesDefaultWhenMissing(t *testing.T) {
 		t.Fatalf("expected 4 layout lines, got %d", len(cfg.Layout.Lines))
 	}
 
+	// Style should default to "default"
+	if cfg.Layout.Style != "default" {
+		t.Errorf("expected style 'default', got %q", cfg.Layout.Style)
+	}
+
 	// Verify line 1
-	if len(cfg.Layout.Lines[0]) != 1 || cfg.Layout.Lines[0][0] != "repo_info" {
-		t.Errorf("line 1: expected [repo_info], got %v", cfg.Layout.Lines[0])
+	if len(cfg.Layout.Lines[0].Left) != 1 || cfg.Layout.Lines[0].Left[0] != "repo_info" {
+		t.Errorf("line 1: expected Left=[repo_info], got %v", cfg.Layout.Lines[0].Left)
 	}
 
 	// Verify line 2
 	expectedLine2 := []string{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"}
-	if len(cfg.Layout.Lines[1]) != len(expectedLine2) {
-		t.Fatalf("line 2: expected %d components, got %d", len(expectedLine2), len(cfg.Layout.Lines[1]))
+	if len(cfg.Layout.Lines[1].Left) != len(expectedLine2) {
+		t.Fatalf("line 2: expected %d components, got %d", len(expectedLine2), len(cfg.Layout.Lines[1].Left))
 	}
 	for i, comp := range expectedLine2 {
-		if cfg.Layout.Lines[1][i] != comp {
-			t.Errorf("line 2[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[1][i])
+		if cfg.Layout.Lines[1].Left[i] != comp {
+			t.Errorf("line 2[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[1].Left[i])
 		}
 	}
 
 	// Verify line 3
 	expectedLine3 := []string{"cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"}
-	if len(cfg.Layout.Lines[2]) != len(expectedLine3) {
-		t.Fatalf("line 3: expected %d components, got %d", len(expectedLine3), len(cfg.Layout.Lines[2]))
+	if len(cfg.Layout.Lines[2].Left) != len(expectedLine3) {
+		t.Fatalf("line 3: expected %d components, got %d", len(expectedLine3), len(cfg.Layout.Lines[2].Left))
 	}
 	for i, comp := range expectedLine3 {
-		if cfg.Layout.Lines[2][i] != comp {
-			t.Errorf("line 3[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[2][i])
+		if cfg.Layout.Lines[2].Left[i] != comp {
+			t.Errorf("line 3[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[2].Left[i])
 		}
 	}
 
 	// Verify line 4
 	expectedLine4 := []string{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"}
-	if len(cfg.Layout.Lines[3]) != len(expectedLine4) {
-		t.Fatalf("line 4: expected %d components, got %d", len(expectedLine4), len(cfg.Layout.Lines[3]))
+	if len(cfg.Layout.Lines[3].Left) != len(expectedLine4) {
+		t.Fatalf("line 4: expected %d components, got %d", len(expectedLine4), len(cfg.Layout.Lines[3].Left))
 	}
 	for i, comp := range expectedLine4 {
-		if cfg.Layout.Lines[3][i] != comp {
-			t.Errorf("line 4[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[3][i])
+		if cfg.Layout.Lines[3].Left[i] != comp {
+			t.Errorf("line 4[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[3].Left[i])
 		}
 	}
 }
@@ -72,7 +77,7 @@ func TestLoad_ParsesExistingFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfgPath := filepath.Join(tmpDir, "config.toml")
 
-	// Write a custom TOML with 2 lines and show_region=false
+	// Write a custom TOML using the old flat format -- tests backward compat
 	content := `
 [layout]
 lines = [
@@ -95,17 +100,25 @@ show_region = false
 		t.Fatal("Load() returned nil config")
 	}
 
-	// Should have 2 lines
+	// Should have 2 lines (auto-migrated from old format)
 	if len(cfg.Layout.Lines) != 2 {
 		t.Fatalf("expected 2 layout lines, got %d", len(cfg.Layout.Lines))
 	}
 
-	// Verify line 2
-	if len(cfg.Layout.Lines[1]) != 2 {
-		t.Fatalf("line 2: expected 2 components, got %d", len(cfg.Layout.Lines[1]))
+	// Style should default to "default" after migration
+	if cfg.Layout.Style != "default" {
+		t.Errorf("expected style 'default', got %q", cfg.Layout.Style)
 	}
-	if cfg.Layout.Lines[1][0] != "bedrock_model" || cfg.Layout.Lines[1][1] != "time_display" {
-		t.Errorf("line 2: expected [bedrock_model, time_display], got %v", cfg.Layout.Lines[1])
+
+	// Verify line 2 (migrated: all components in Left, Right empty)
+	if len(cfg.Layout.Lines[1].Left) != 2 {
+		t.Fatalf("line 2: expected 2 components, got %d", len(cfg.Layout.Lines[1].Left))
+	}
+	if cfg.Layout.Lines[1].Left[0] != "bedrock_model" || cfg.Layout.Lines[1].Left[1] != "time_display" {
+		t.Errorf("line 2: expected Left=[bedrock_model, time_display], got %v", cfg.Layout.Lines[1].Left)
+	}
+	if len(cfg.Layout.Lines[1].Right) != 0 {
+		t.Errorf("line 2: expected empty Right after migration, got %v", cfg.Layout.Lines[1].Right)
 	}
 
 	// Verify show_region is set to false
@@ -184,41 +197,46 @@ func TestDefaultConfig(t *testing.T) {
 		t.Fatalf("expected 4 layout lines, got %d", len(cfg.Layout.Lines))
 	}
 
+	// Style should be "default"
+	if cfg.Layout.Style != "default" {
+		t.Errorf("expected style 'default', got %q", cfg.Layout.Style)
+	}
+
 	// Verify line 1
-	if len(cfg.Layout.Lines[0]) != 1 || cfg.Layout.Lines[0][0] != "repo_info" {
-		t.Errorf("line 1: expected [repo_info], got %v", cfg.Layout.Lines[0])
+	if len(cfg.Layout.Lines[0].Left) != 1 || cfg.Layout.Lines[0].Left[0] != "repo_info" {
+		t.Errorf("line 1: expected Left=[repo_info], got %v", cfg.Layout.Lines[0].Left)
 	}
 
 	// Verify line 2
 	expectedLine2 := []string{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"}
-	if len(cfg.Layout.Lines[1]) != len(expectedLine2) {
-		t.Fatalf("line 2: expected %d components, got %d", len(expectedLine2), len(cfg.Layout.Lines[1]))
+	if len(cfg.Layout.Lines[1].Left) != len(expectedLine2) {
+		t.Fatalf("line 2: expected %d components, got %d", len(expectedLine2), len(cfg.Layout.Lines[1].Left))
 	}
 	for i, comp := range expectedLine2 {
-		if cfg.Layout.Lines[1][i] != comp {
-			t.Errorf("line 2[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[1][i])
+		if cfg.Layout.Lines[1].Left[i] != comp {
+			t.Errorf("line 2[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[1].Left[i])
 		}
 	}
 
 	// Verify line 3
 	expectedLine3 := []string{"cost_monthly", "cost_weekly", "cost_daily", "cost_live", "context_window", "session_mode"}
-	if len(cfg.Layout.Lines[2]) != len(expectedLine3) {
-		t.Fatalf("line 3: expected %d components, got %d", len(expectedLine3), len(cfg.Layout.Lines[2]))
+	if len(cfg.Layout.Lines[2].Left) != len(expectedLine3) {
+		t.Fatalf("line 3: expected %d components, got %d", len(expectedLine3), len(cfg.Layout.Lines[2].Left))
 	}
 	for i, comp := range expectedLine3 {
-		if cfg.Layout.Lines[2][i] != comp {
-			t.Errorf("line 3[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[2][i])
+		if cfg.Layout.Lines[2].Left[i] != comp {
+			t.Errorf("line 3[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[2].Left[i])
 		}
 	}
 
 	// Verify line 4
 	expectedLine4 := []string{"burn_rate", "cache_efficiency", "block_projection", "code_productivity"}
-	if len(cfg.Layout.Lines[3]) != len(expectedLine4) {
-		t.Fatalf("line 4: expected %d components, got %d", len(expectedLine4), len(cfg.Layout.Lines[3]))
+	if len(cfg.Layout.Lines[3].Left) != len(expectedLine4) {
+		t.Fatalf("line 4: expected %d components, got %d", len(expectedLine4), len(cfg.Layout.Lines[3].Left))
 	}
 	for i, comp := range expectedLine4 {
-		if cfg.Layout.Lines[3][i] != comp {
-			t.Errorf("line 4[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[3][i])
+		if cfg.Layout.Lines[3].Left[i] != comp {
+			t.Errorf("line 4[%d]: expected %q, got %q", i, comp, cfg.Layout.Lines[3].Left[i])
 		}
 	}
 
@@ -261,5 +279,98 @@ func TestDefaultConfig(t *testing.T) {
 	}
 	if *cpComp.ShowCostPerLine != true {
 		t.Errorf("expected code_productivity.ShowCostPerLine=true, got %v", *cpComp.ShowCostPerLine)
+	}
+}
+
+func TestLoad_NewFormat_LeftRight(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[layout]
+style = "powerline"
+
+[[layout.lines]]
+left  = ["repo_info"]
+right = ["time_display"]
+
+[[layout.lines]]
+left  = ["model_info", "commits"]
+right = ["context_window"]
+`
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.Layout.Style != "powerline" {
+		t.Errorf("expected style 'powerline', got %q", cfg.Layout.Style)
+	}
+	if len(cfg.Layout.Lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(cfg.Layout.Lines))
+	}
+	if cfg.Layout.Lines[0].Left[0] != "repo_info" {
+		t.Errorf("unexpected Left[0]: %v", cfg.Layout.Lines[0].Left)
+	}
+	if cfg.Layout.Lines[0].Right[0] != "time_display" {
+		t.Errorf("unexpected Right[0]: %v", cfg.Layout.Lines[0].Right)
+	}
+}
+
+func TestLoad_OldFormat_AutoMigrates(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[layout]
+lines = [
+  ["repo_info"],
+  ["model_info", "commits"],
+]
+`
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.Layout.Style != "default" {
+		t.Errorf("expected style 'default', got %q", cfg.Layout.Style)
+	}
+	if len(cfg.Layout.Lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(cfg.Layout.Lines))
+	}
+	if cfg.Layout.Lines[0].Left[0] != "repo_info" {
+		t.Errorf("unexpected Left: %v", cfg.Layout.Lines[0].Left)
+	}
+	if len(cfg.Layout.Lines[0].Right) != 0 {
+		t.Errorf("expected empty Right, got %v", cfg.Layout.Lines[0].Right)
+	}
+}
+
+func TestDefaultConfig_HasLines(t *testing.T) {
+	cfg := DefaultConfig()
+	if len(cfg.Layout.Lines) == 0 {
+		t.Error("expected lines")
+	}
+	if cfg.Layout.Style != "default" {
+		t.Errorf("expected 'default' style, got %q", cfg.Layout.Style)
+	}
+}
+
+func TestDefaultPowerlineConfig_HasLines(t *testing.T) {
+	cfg := DefaultPowerlineConfig()
+	if len(cfg.Layout.Lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(cfg.Layout.Lines))
+	}
+	if cfg.Layout.Style != "powerline" {
+		t.Errorf("expected 'powerline', got %q", cfg.Layout.Style)
+	}
+	if len(cfg.Layout.Lines[0].Left) == 0 {
+		t.Error("expected Left components")
+	}
+	if len(cfg.Layout.Lines[0].Right) == 0 {
+		t.Error("expected Right components")
 	}
 }
