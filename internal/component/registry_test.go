@@ -76,3 +76,30 @@ func TestRegistry_RenderLine_SkipsEmptyOutput(t *testing.T) {
 		t.Errorf("expected 1 component (empty output skipped), got %d", len(output))
 	}
 }
+
+func TestRegistry_RenderNamedLine(t *testing.T) {
+	r := NewRegistry()
+	r.Register(&mockComponent{name: "alpha", output: "rendered_alpha"})
+	r.Register(&mockComponent{name: "beta", output: "rendered_beta"})
+	r.Register(&mockComponent{name: "empty", output: ""})
+
+	names, outputs := r.RenderNamedLine(&input.StatusLineInput{}, []string{"alpha", "beta", "empty", "unknown"})
+
+	if len(names) != 2 {
+		t.Fatalf("expected 2 names, got %d: %v", len(names), names)
+	}
+	if names[0] != "alpha" || names[1] != "beta" {
+		t.Errorf("expected [alpha, beta], got %v", names)
+	}
+	if outputs[0] != "rendered_alpha" || outputs[1] != "rendered_beta" {
+		t.Errorf("unexpected outputs: %v", outputs)
+	}
+}
+
+func TestRegistry_RenderNamedLine_Empty(t *testing.T) {
+	r := NewRegistry()
+	names, outputs := r.RenderNamedLine(&input.StatusLineInput{}, []string{"nonexistent"})
+	if len(names) != 0 || len(outputs) != 0 {
+		t.Errorf("expected empty slices for nonexistent components")
+	}
+}

@@ -67,6 +67,58 @@ func TestRenderer_RenderLines_Empty(t *testing.T) {
 	}
 }
 
+func TestRenderer_RenderOutput_DefaultStyle(t *testing.T) {
+	r := New()
+
+	lines := []LineData{
+		{Left: []string{"alpha", "beta"}, LeftNames: []string{"repo_info", "model_info"}},
+		{Left: []string{"gamma"}, LeftNames: []string{"cost_daily"}},
+	}
+
+	output := r.RenderOutput(lines, 80)
+
+	if !strings.Contains(output, "alpha") {
+		t.Error("expected 'alpha' in output")
+	}
+	if !strings.Contains(output, " │ ") {
+		t.Error("expected separator in output")
+	}
+	lineCount := strings.Count(output, "\n")
+	if lineCount != 1 {
+		t.Errorf("expected 1 newline (2 lines), got %d", lineCount)
+	}
+}
+
+func TestRenderer_RenderOutput_FiltersEmptyLines(t *testing.T) {
+	r := New()
+
+	lines := []LineData{
+		{Left: []string{"alpha"}},
+		{}, // empty line
+		{Left: []string{"beta"}},
+	}
+
+	output := r.RenderOutput(lines, 80)
+	lineCount := strings.Count(output, "\n")
+	if lineCount != 1 {
+		t.Errorf("expected 1 newline (2 non-empty lines), got %d", lineCount)
+	}
+}
+
+func TestRenderer_SetStyle(t *testing.T) {
+	r := New()
+	custom := NewDefaultStyle(" | ")
+	r.SetStyle(custom)
+
+	lines := []LineData{
+		{Left: []string{"a", "b"}},
+	}
+	output := r.RenderOutput(lines, 80)
+	if !strings.Contains(output, " | ") {
+		t.Error("expected custom separator ' | ' after SetStyle")
+	}
+}
+
 func TestRenderer_StyleHelpers(t *testing.T) {
 	r := New()
 
