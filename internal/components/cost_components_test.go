@@ -9,6 +9,7 @@ import (
 
 	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/cost"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -21,7 +22,7 @@ func TestCostMonthly_Name(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
-	c := NewCostMonthly(r, s)
+	c := NewCostMonthly(r, s, icons.New("emoji"))
 
 	if c.Name() != "cost_monthly" {
 		t.Errorf("expected 'cost_monthly', got %q", c.Name())
@@ -32,7 +33,7 @@ func TestCostMonthly_Render_EmptyHistory(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
-	c := NewCostMonthly(r, s)
+	c := NewCostMonthly(r, s, icons.New("emoji"))
 
 	in := &input.StatusLineInput{}
 
@@ -56,7 +57,7 @@ func TestCostMonthly_Render_WithEntries(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
-	c := NewCostMonthly(r, s)
+	c := NewCostMonthly(r, s, icons.New("emoji"))
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
@@ -73,7 +74,7 @@ func TestCostWeekly_Name(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
-	c := NewCostWeekly(r, s)
+	c := NewCostWeekly(r, s, icons.New("emoji"))
 
 	if c.Name() != "cost_weekly" {
 		t.Errorf("expected 'cost_weekly', got %q", c.Name())
@@ -84,7 +85,7 @@ func TestCostWeekly_Render_EmptyHistory(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
-	c := NewCostWeekly(r, s)
+	c := NewCostWeekly(r, s, icons.New("emoji"))
 
 	in := &input.StatusLineInput{}
 
@@ -111,7 +112,7 @@ func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
-	c := NewCostWeekly(r, s)
+	c := NewCostWeekly(r, s, icons.New("emoji"))
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
@@ -128,7 +129,7 @@ func TestCostDaily_Name(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
-	c := NewCostDaily(r, s)
+	c := NewCostDaily(r, s, icons.New("emoji"))
 
 	if c.Name() != "cost_daily" {
 		t.Errorf("expected 'cost_daily', got %q", c.Name())
@@ -139,7 +140,7 @@ func TestCostDaily_Render_EmptyHistory(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
-	c := NewCostDaily(r, s)
+	c := NewCostDaily(r, s, icons.New("emoji"))
 
 	in := &input.StatusLineInput{}
 
@@ -169,7 +170,7 @@ func TestCostDaily_Render_IncludesTodayEntries(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
-	c := NewCostDaily(r, s)
+	c := NewCostDaily(r, s, icons.New("emoji"))
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
@@ -194,7 +195,7 @@ func TestCostDaily_Render_ExcludesYesterdayEntries(t *testing.T) {
 	r := render.New()
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
-	c := NewCostDaily(r, s)
+	c := NewCostDaily(r, s, icons.New("emoji"))
 	in := &input.StatusLineInput{}
 
 	output := c.Render(in)
@@ -210,7 +211,7 @@ func TestCostDaily_Render_ExcludesYesterdayEntries(t *testing.T) {
 func TestCostLive_Name(t *testing.T) {
 	r := render.New()
 	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostLive(r, h)
+	c := NewCostLive(r, h, icons.New("emoji"))
 
 	if c.Name() != "cost_live" {
 		t.Errorf("expected 'cost_live', got %q", c.Name())
@@ -220,7 +221,7 @@ func TestCostLive_Name(t *testing.T) {
 func TestCostLive_Render_ZeroCost(t *testing.T) {
 	r := render.New()
 	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostLive(r, h)
+	c := NewCostLive(r, h, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{TotalCostUSD: 0.0},
@@ -238,7 +239,7 @@ func TestCostLive_Render_ZeroCost(t *testing.T) {
 func TestCostLive_Render_DisplaysCost(t *testing.T) {
 	r := render.New()
 	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
-	c := NewCostLive(r, h)
+	c := NewCostLive(r, h, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		SessionID: "session-abc",
@@ -257,7 +258,7 @@ func TestCostLive_Render_AppendsToHistory(t *testing.T) {
 
 	r := render.New()
 	h := cost.NewHistory(histPath)
-	c := NewCostLive(r, h)
+	c := NewCostLive(r, h, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		SessionID: "session-xyz",
@@ -287,7 +288,7 @@ func TestCostLive_Render_SkipsAppendWhenNoSession(t *testing.T) {
 
 	r := render.New()
 	h := cost.NewHistory(histPath)
-	c := NewCostLive(r, h)
+	c := NewCostLive(r, h, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		SessionID: "",
@@ -308,7 +309,7 @@ func TestCostLive_Render_SkipsAppendWhenZeroCost(t *testing.T) {
 
 	r := render.New()
 	h := cost.NewHistory(histPath)
-	c := NewCostLive(r, h)
+	c := NewCostLive(r, h, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		SessionID: "session-abc",

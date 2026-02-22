@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/h2ik/claude-statusline/internal/config"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -16,7 +17,7 @@ import (
 func TestContextWindow_Name(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	if c.Name() != "context_window" {
 		t.Errorf("expected 'context_window', got %q", c.Name())
@@ -26,7 +27,7 @@ func TestContextWindow_Name(t *testing.T) {
 func TestContextWindow_Render_EmptyWhenZeroPercent(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -43,7 +44,7 @@ func TestContextWindow_Render_EmptyWhenZeroPercent(t *testing.T) {
 func TestContextWindow_Render_GreenZone(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -55,15 +56,15 @@ func TestContextWindow_Render_GreenZone(t *testing.T) {
 	if !strings.Contains(output, "25%") {
 		t.Errorf("expected '25%%' in output, got: %s", output)
 	}
-	if !strings.Contains(output, "\xf0\x9f\xa7\xa0") { // brain emoji
-		t.Errorf("expected brain emoji in output, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Brain)) {
+		t.Errorf("expected brain icon in output, got: %s", output)
 	}
 }
 
 func TestContextWindow_Render_YellowZone(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -80,7 +81,7 @@ func TestContextWindow_Render_YellowZone(t *testing.T) {
 func TestContextWindow_Render_RedZone(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -97,7 +98,7 @@ func TestContextWindow_Render_RedZone(t *testing.T) {
 func TestContextWindow_Render_WarningAt95(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -109,15 +110,15 @@ func TestContextWindow_Render_WarningAt95(t *testing.T) {
 	if !strings.Contains(output, "95%") {
 		t.Errorf("expected '95%%' in output, got: %s", output)
 	}
-	if !strings.Contains(output, "\xe2\x9a\xa0\xef\xb8\x8f") { // warning emoji
-		t.Errorf("expected warning emoji at 95%%, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Warning)) {
+		t.Errorf("expected warning icon at 95%%, got: %s", output)
 	}
 }
 
 func TestContextWindow_Render_WithTokenCounts(t *testing.T) {
 	r := render.New()
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -146,7 +147,7 @@ func TestContextWindow_Render_HidesTokensWhenConfigured(t *testing.T) {
 			},
 		},
 	}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -173,7 +174,7 @@ func TestContextWindow_Render_ShowsTokensByDefault(t *testing.T) {
 	r := render.New()
 	// Empty config - no explicit show_tokens setting, should default to true
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
-	c := NewContextWindow(r, cfg)
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		ContextWindow: input.ContextWindow{
@@ -198,7 +199,7 @@ func TestContextWindow_Render_ShowsTokensByDefault(t *testing.T) {
 
 func TestSessionMode_Name(t *testing.T) {
 	r := render.New()
-	c := NewSessionMode(r)
+	c := NewSessionMode(r, icons.New("emoji"))
 
 	if c.Name() != "session_mode" {
 		t.Errorf("expected 'session_mode', got %q", c.Name())
@@ -207,7 +208,7 @@ func TestSessionMode_Name(t *testing.T) {
 
 func TestSessionMode_Render_EmptyWhenNoStyle(t *testing.T) {
 	r := render.New()
-	c := NewSessionMode(r)
+	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		OutputStyle: input.OutputStyle{
@@ -223,7 +224,7 @@ func TestSessionMode_Render_EmptyWhenNoStyle(t *testing.T) {
 
 func TestSessionMode_Render_EmptyWhenDefault(t *testing.T) {
 	r := render.New()
-	c := NewSessionMode(r)
+	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		OutputStyle: input.OutputStyle{
@@ -239,7 +240,7 @@ func TestSessionMode_Render_EmptyWhenDefault(t *testing.T) {
 
 func TestSessionMode_Render_ExplanatoryStyle(t *testing.T) {
 	r := render.New()
-	c := NewSessionMode(r)
+	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		OutputStyle: input.OutputStyle{
@@ -248,8 +249,8 @@ func TestSessionMode_Render_ExplanatoryStyle(t *testing.T) {
 	}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "\xf0\x9f\x93\x9a") { // book emoji
-		t.Errorf("expected book emoji for 'explanatory' style, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Book)) {
+		t.Errorf("expected book icon for 'explanatory' style, got: %s", output)
 	}
 	if !strings.Contains(output, "Style:") {
 		t.Errorf("expected 'Style:' label in output, got: %s", output)
@@ -261,7 +262,7 @@ func TestSessionMode_Render_ExplanatoryStyle(t *testing.T) {
 
 func TestSessionMode_Render_UnknownStyle(t *testing.T) {
 	r := render.New()
-	c := NewSessionMode(r)
+	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		OutputStyle: input.OutputStyle{
@@ -270,8 +271,8 @@ func TestSessionMode_Render_UnknownStyle(t *testing.T) {
 	}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "\xe2\x9c\xa8") { // sparkles emoji
-		t.Errorf("expected sparkles emoji for unknown style, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Sparkles)) {
+		t.Errorf("expected sparkles icon for unknown style, got: %s", output)
 	}
 	if !strings.Contains(output, "some-custom-style") {
 		t.Errorf("expected 'some-custom-style' in output, got: %s", output)

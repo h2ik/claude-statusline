@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -12,11 +13,12 @@ import (
 // based on the model family (Opus, Sonnet, Haiku, or generic).
 type ModelInfo struct {
 	renderer *render.Renderer
+	icons    icons.IconSet
 }
 
 // NewModelInfo creates a new ModelInfo component with the given renderer.
-func NewModelInfo(r *render.Renderer) *ModelInfo {
-	return &ModelInfo{renderer: r}
+func NewModelInfo(r *render.Renderer, ic icons.IconSet) *ModelInfo {
+	return &ModelInfo{renderer: r, icons: ic}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -38,23 +40,23 @@ func (c *ModelInfo) Render(in *input.StatusLineInput) string {
 		name = "Claude"
 	}
 
-	emoji := c.getEmoji(name)
+	icon := c.getIcon(name)
 
-	return fmt.Sprintf("%s %s", emoji, c.renderer.Teal(name))
+	return fmt.Sprintf("%s %s", icon, c.renderer.Teal(name))
 }
 
-// getEmoji returns an emoji based on the model family name.
-func (c *ModelInfo) getEmoji(name string) string {
+// getIcon returns an icon based on the model family name.
+func (c *ModelInfo) getIcon(name string) string {
 	lower := strings.ToLower(name)
 
 	switch {
 	case strings.Contains(lower, "opus"):
-		return "\xf0\x9f\xa7\xa0" // brain
+		return c.icons.Get(icons.Brain)
 	case strings.Contains(lower, "haiku"):
-		return "\xe2\x9a\xa1" // lightning
+		return c.icons.Get(icons.Lightning)
 	case strings.Contains(lower, "sonnet"):
-		return "\xf0\x9f\x8e\xb5" // musical note
+		return c.icons.Get(icons.Music)
 	default:
-		return "\xf0\x9f\xa4\x96" // robot
+		return c.icons.Get(icons.Robot)
 	}
 }

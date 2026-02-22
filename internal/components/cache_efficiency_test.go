@@ -4,13 +4,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
 func TestCacheEfficiency_Name(t *testing.T) {
 	r := render.New()
-	c := NewCacheEfficiency(r)
+	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	if c.Name() != "cache_efficiency" {
 		t.Errorf("expected 'cache_efficiency', got %q", c.Name())
@@ -19,7 +20,7 @@ func TestCacheEfficiency_Name(t *testing.T) {
 
 func TestCacheEfficiency_Render_ZeroTokens(t *testing.T) {
 	r := render.New()
-	c := NewCacheEfficiency(r)
+	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		CurrentUsage: input.UsageInfo{
@@ -37,7 +38,7 @@ func TestCacheEfficiency_Render_ZeroTokens(t *testing.T) {
 
 func TestCacheEfficiency_Render_HighEfficiency(t *testing.T) {
 	r := render.New()
-	c := NewCacheEfficiency(r)
+	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		CurrentUsage: input.UsageInfo{
@@ -48,8 +49,8 @@ func TestCacheEfficiency_Render_HighEfficiency(t *testing.T) {
 	}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "💾") {
-		t.Errorf("expected disk emoji in output, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.FloppyDisk)) {
+		t.Errorf("expected floppy disk icon in output, got: %s", output)
 	}
 	// 7000 / 10000 = 70%
 	if !strings.Contains(output, "70% cache") {
@@ -59,7 +60,7 @@ func TestCacheEfficiency_Render_HighEfficiency(t *testing.T) {
 
 func TestCacheEfficiency_Render_LowEfficiency(t *testing.T) {
 	r := render.New()
-	c := NewCacheEfficiency(r)
+	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		CurrentUsage: input.UsageInfo{
@@ -78,7 +79,7 @@ func TestCacheEfficiency_Render_LowEfficiency(t *testing.T) {
 
 func TestCacheEfficiency_Render_MediumEfficiency(t *testing.T) {
 	r := render.New()
-	c := NewCacheEfficiency(r)
+	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		CurrentUsage: input.UsageInfo{

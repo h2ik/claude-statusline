@@ -17,8 +17,9 @@ type Config struct {
 
 // Layout defines which components appear on each line.
 type Layout struct {
-	Style string       `toml:"style"`
-	Lines []LayoutLine `toml:"lines"`
+	Style     string       `toml:"style"`
+	IconStyle string       `toml:"icon_style"`
+	Lines     []LayoutLine `toml:"lines"`
 }
 
 // LayoutLine describes the left and right component groups for a single
@@ -135,7 +136,8 @@ func DefaultConfig() *Config {
 
 	return &Config{
 		Layout: Layout{
-			Style: "default",
+			Style:     "default",
+			IconStyle: "emoji",
 			Lines: []LayoutLine{
 				{Left: []string{"repo_info"}},
 				{Left: []string{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"}},
@@ -168,7 +170,8 @@ func DefaultPowerlineConfig() *Config {
 
 	return &Config{
 		Layout: Layout{
-			Style: "powerline",
+			Style:     "powerline",
+			IconStyle: "nerd-font",
 			Lines: []LayoutLine{
 				{
 					Left:  []string{"repo_info", "bedrock_model", "model_info"},

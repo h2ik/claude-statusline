@@ -11,6 +11,7 @@ import (
 	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/claude"
 	"github.com/h2ik/claude-statusline/internal/config"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -23,11 +24,12 @@ type BedrockModel struct {
 	cache    *cache.Cache
 	config   *config.Config
 	settings *claude.Settings
+	icons    icons.IconSet
 }
 
 // NewBedrockModel creates a new BedrockModel component with the given renderer, cache, config, and optional Claude settings.
-func NewBedrockModel(r *render.Renderer, c *cache.Cache, cfg *config.Config, s *claude.Settings) *BedrockModel {
-	return &BedrockModel{renderer: r, cache: c, config: cfg, settings: s}
+func NewBedrockModel(r *render.Renderer, c *cache.Cache, cfg *config.Config, s *claude.Settings, ic icons.IconSet) *BedrockModel {
+	return &BedrockModel{renderer: r, cache: c, config: cfg, settings: s, icons: ic}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -46,10 +48,11 @@ func (c *BedrockModel) Render(in *input.StatusLineInput) string {
 	}
 
 	name, region := c.resolveBedrockARN(modelName)
+	icon := c.icons.Get(icons.Brain)
 	if region != "" && c.config.GetBool("bedrock_model", "show_region", true) {
-		return fmt.Sprintf("🧠 %s %s", c.renderer.Text(name), c.renderer.Dimmed("("+region+")"))
+		return fmt.Sprintf("%s %s %s", icon, c.renderer.Text(name), c.renderer.Dimmed("("+region+")"))
 	}
-	return fmt.Sprintf("🧠 %s", c.renderer.Text(name))
+	return fmt.Sprintf("%s %s", icon, c.renderer.Text(name))
 }
 
 // resolveBedrockARN resolves a Bedrock inference profile ARN to a friendly name

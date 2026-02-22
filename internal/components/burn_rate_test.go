@@ -4,13 +4,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
 func TestBurnRate_Name(t *testing.T) {
 	r := render.New()
-	c := NewBurnRate(r)
+	c := NewBurnRate(r, icons.New("emoji"))
 
 	if c.Name() != "burn_rate" {
 		t.Errorf("expected 'burn_rate', got %q", c.Name())
@@ -19,7 +20,7 @@ func TestBurnRate_Name(t *testing.T) {
 
 func TestBurnRate_Render_ZeroDuration(t *testing.T) {
 	r := render.New()
-	c := NewBurnRate(r)
+	c := NewBurnRate(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{
@@ -36,7 +37,7 @@ func TestBurnRate_Render_ZeroDuration(t *testing.T) {
 
 func TestBurnRate_Render_DisplaysRate(t *testing.T) {
 	r := render.New()
-	c := NewBurnRate(r)
+	c := NewBurnRate(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{
@@ -46,8 +47,8 @@ func TestBurnRate_Render_DisplaysRate(t *testing.T) {
 	}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "\xf0\x9f\x94\xa5") {
-		t.Errorf("expected fire emoji in output, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Fire)) {
+		t.Errorf("expected fire icon in output, got: %s", output)
 	}
 	if !strings.Contains(output, "$0.12/min") {
 		t.Errorf("expected '$0.12/min' for burn rate, got: %s", output)
@@ -56,7 +57,7 @@ func TestBurnRate_Render_DisplaysRate(t *testing.T) {
 
 func TestBurnRate_Render_RoundsCorrectly(t *testing.T) {
 	r := render.New()
-	c := NewBurnRate(r)
+	c := NewBurnRate(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{

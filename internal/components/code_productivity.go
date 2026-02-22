@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/h2ik/claude-statusline/internal/config"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -12,11 +13,12 @@ import (
 type CodeProductivity struct {
 	renderer *render.Renderer
 	config   *config.Config
+	icons    icons.IconSet
 }
 
 // NewCodeProductivity creates a new CodeProductivity component.
-func NewCodeProductivity(r *render.Renderer, cfg *config.Config) *CodeProductivity {
-	return &CodeProductivity{renderer: r, config: cfg}
+func NewCodeProductivity(r *render.Renderer, cfg *config.Config, ic icons.IconSet) *CodeProductivity {
+	return &CodeProductivity{renderer: r, config: cfg, icons: ic}
 }
 
 // Name returns the component identifier.
@@ -54,7 +56,7 @@ func (c *CodeProductivity) Render(in *input.StatusLineInput) string {
 		return ""
 	}
 
-	output := "✏️ "
+	output := c.icons.Get(icons.Pencil) + " "
 	for i, part := range parts {
 		if i > 0 {
 			output += " │ "

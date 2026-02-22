@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -10,11 +11,12 @@ import (
 // BlockProjection displays rate limit utilization from 5-hour and 7-day windows.
 type BlockProjection struct {
 	renderer *render.Renderer
+	icons    icons.IconSet
 }
 
 // NewBlockProjection creates a new BlockProjection component.
-func NewBlockProjection(r *render.Renderer) *BlockProjection {
-	return &BlockProjection{renderer: r}
+func NewBlockProjection(r *render.Renderer, ic icons.IconSet) *BlockProjection {
+	return &BlockProjection{renderer: r, icons: ic}
 }
 
 // Name returns the component identifier.
@@ -48,7 +50,7 @@ func (c *BlockProjection) Render(in *input.StatusLineInput) string {
 		return ""
 	}
 
-	output := "⏳ "
+	output := c.icons.Get(icons.Hourglass) + " "
 	for i, part := range parts {
 		if i > 0 {
 			output += " │ "

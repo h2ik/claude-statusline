@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/h2ik/claude-statusline/internal/git"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -14,11 +15,12 @@ import (
 // (with ~ notation), git branch, clean/dirty status, and worktree indicator.
 type RepoInfo struct {
 	renderer *render.Renderer
+	icons    icons.IconSet
 }
 
 // NewRepoInfo creates a new RepoInfo component with the given renderer.
-func NewRepoInfo(r *render.Renderer) *RepoInfo {
-	return &RepoInfo{renderer: r}
+func NewRepoInfo(r *render.Renderer, ic icons.IconSet) *RepoInfo {
+	return &RepoInfo{renderer: r, icons: ic}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -47,10 +49,10 @@ func (c *RepoInfo) Render(in *input.StatusLineInput) string {
 		clean = false
 	}
 
-	statusEmoji := "✅"
+	statusIcon := c.icons.Get(icons.CheckMark)
 	statusColor := c.renderer.Green
 	if !clean {
-		statusEmoji = "📁"
+		statusIcon = c.icons.Get(icons.Folder)
 		statusColor = c.renderer.Yellow
 	}
 
@@ -63,7 +65,7 @@ func (c *RepoInfo) Render(in *input.StatusLineInput) string {
 	return fmt.Sprintf("%s %s %s%s",
 		c.renderer.Blue(displayDir),
 		c.renderer.Mauve(fmt.Sprintf("(%s)", branch)),
-		statusColor(statusEmoji),
+		statusColor(statusIcon),
 		wtIndicator,
 	)
 }

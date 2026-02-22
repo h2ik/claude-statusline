@@ -4,13 +4,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
 func TestBlockProjection_Name(t *testing.T) {
 	r := render.New()
-	c := NewBlockProjection(r)
+	c := NewBlockProjection(r, icons.New("emoji"))
 
 	if c.Name() != "block_projection" {
 		t.Errorf("expected 'block_projection', got %q", c.Name())
@@ -19,7 +20,7 @@ func TestBlockProjection_Name(t *testing.T) {
 
 func TestBlockProjection_Render_ZeroUtilization(t *testing.T) {
 	r := render.New()
-	c := NewBlockProjection(r)
+	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		FiveHour: input.UsageLimit{Utilization: 0.0},
@@ -34,7 +35,7 @@ func TestBlockProjection_Render_ZeroUtilization(t *testing.T) {
 
 func TestBlockProjection_Render_LowUtilization(t *testing.T) {
 	r := render.New()
-	c := NewBlockProjection(r)
+	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		FiveHour: input.UsageLimit{Utilization: 0.25},
@@ -42,8 +43,8 @@ func TestBlockProjection_Render_LowUtilization(t *testing.T) {
 	}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "⏳") {
-		t.Errorf("expected hourglass emoji in output, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Hourglass)) {
+		t.Errorf("expected hourglass icon in output, got: %s", output)
 	}
 	if !strings.Contains(output, "5h: 25%") {
 		t.Errorf("expected '5h: 25%%' in output, got: %s", output)
@@ -55,7 +56,7 @@ func TestBlockProjection_Render_LowUtilization(t *testing.T) {
 
 func TestBlockProjection_Render_HighUtilization(t *testing.T) {
 	r := render.New()
-	c := NewBlockProjection(r)
+	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		FiveHour: input.UsageLimit{Utilization: 0.85},
@@ -73,7 +74,7 @@ func TestBlockProjection_Render_HighUtilization(t *testing.T) {
 
 func TestBlockProjection_Render_OnlyFiveHourData(t *testing.T) {
 	r := render.New()
-	c := NewBlockProjection(r)
+	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		FiveHour: input.UsageLimit{Utilization: 0.45},

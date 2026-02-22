@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
 
 func TestRepoInfo_Render(t *testing.T) {
 	r := render.New()
-	c := NewRepoInfo(r)
+	c := NewRepoInfo(r, icons.New("emoji"))
 
 	if c.Name() != "repo_info" {
 		t.Errorf("expected 'repo_info', got %s", c.Name())

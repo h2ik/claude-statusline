@@ -13,6 +13,7 @@ import (
 	"github.com/h2ik/claude-statusline/internal/components"
 	"github.com/h2ik/claude-statusline/internal/config"
 	"github.com/h2ik/claude-statusline/internal/cost"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -53,33 +54,36 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create icon set from config
+	ic := icons.New(cfg.Layout.IconStyle)
+
 	// Create registry and register components
 	registry := component.NewRegistry()
 
 	// Line 1 components
-	registry.Register(components.NewRepoInfo(r))
+	registry.Register(components.NewRepoInfo(r, ic))
 
 	// Line 2 components
-	registry.Register(components.NewModelInfo(r))
-	registry.Register(components.NewBedrockModel(r, c, cfg, claudeSettings))
-	registry.Register(components.NewCommits(r))
-	registry.Register(components.NewSubmodules(r))
+	registry.Register(components.NewModelInfo(r, ic))
+	registry.Register(components.NewBedrockModel(r, c, cfg, claudeSettings, ic))
+	registry.Register(components.NewCommits(r, ic))
+	registry.Register(components.NewSubmodules(r, ic))
 	registry.Register(components.NewVersionInfo(r, c))
-	registry.Register(components.NewTimeDisplay(r))
+	registry.Register(components.NewTimeDisplay(r, ic))
 
 	// Line 3 components
-	registry.Register(components.NewCostMonthly(r, scanner))
-	registry.Register(components.NewCostWeekly(r, scanner))
-	registry.Register(components.NewCostDaily(r, scanner))
-	registry.Register(components.NewCostLive(r, h))
-	registry.Register(components.NewContextWindow(r, cfg))
-	registry.Register(components.NewSessionMode(r))
+	registry.Register(components.NewCostMonthly(r, scanner, ic))
+	registry.Register(components.NewCostWeekly(r, scanner, ic))
+	registry.Register(components.NewCostDaily(r, scanner, ic))
+	registry.Register(components.NewCostLive(r, h, ic))
+	registry.Register(components.NewContextWindow(r, cfg, ic))
+	registry.Register(components.NewSessionMode(r, ic))
 
 	// Line 4 components
-	registry.Register(components.NewBurnRate(r))
-	registry.Register(components.NewCacheEfficiency(r))
-	registry.Register(components.NewBlockProjection(r))
-	registry.Register(components.NewCodeProductivity(r, cfg))
+	registry.Register(components.NewBurnRate(r, ic))
+	registry.Register(components.NewCacheEfficiency(r, ic))
+	registry.Register(components.NewBlockProjection(r, ic))
+	registry.Register(components.NewCodeProductivity(r, cfg, ic))
 
 	// Select rendering style
 	switch cfg.Layout.Style {
