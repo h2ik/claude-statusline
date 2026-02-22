@@ -96,6 +96,24 @@ icon_style = "nerd-font"
 
 When `icon_style` is omitted or empty, it defaults to `"emoji"`.
 
+### Path compression
+
+Long directory paths eat into available terminal width, especially in powerline mode with right-aligned components. The `repo_info` component supports Fish-style path compression that shortens intermediate directories to their first letter while keeping the repository name and subdirectories intact.
+
+Two `path_style` values are available:
+
+- **`full`** (default) — Display the complete path: `~/Projects/h2ik/claude-statusline/internal`
+- **`compress`** — Shorten intermediate directories above the repo root: `~/P/h/claude-statusline/internal`
+
+Set `path_style` under `[components.repo_info]`:
+
+```toml
+[components.repo_info]
+path_style = "compress"
+```
+
+The powerline default config enables compression automatically.
+
 ## Configuration
 
 The statusline reads its config from `~/.claude/statusline/config.toml`. A default file is created on first run.
@@ -146,6 +164,9 @@ right = ["commits", "submodules", "version_info", "time_display"]
 [[layout.lines]]
 left  = ["cost_monthly", "cost_weekly", "cost_daily", "cost_live"]
 right = ["context_window", "session_mode", "burn_rate", "cache_efficiency", "block_projection", "code_productivity"]
+
+[components.repo_info]
+path_style = "compress"
 
 [components.bedrock_model]
 show_region = true

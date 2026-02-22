@@ -33,10 +33,11 @@ type LayoutLine struct {
 // ComponentConfig holds per-component configuration options.
 // Pointer bools distinguish "not set" from "set to false".
 type ComponentConfig struct {
-	ShowRegion      *bool `toml:"show_region,omitempty"`
-	ShowTokens      *bool `toml:"show_tokens,omitempty"`
-	ShowVelocity    *bool `toml:"show_velocity,omitempty"`
-	ShowCostPerLine *bool `toml:"show_cost_per_line,omitempty"`
+	ShowRegion      *bool   `toml:"show_region,omitempty"`
+	ShowTokens      *bool   `toml:"show_tokens,omitempty"`
+	ShowVelocity    *bool   `toml:"show_velocity,omitempty"`
+	ShowCostPerLine *bool   `toml:"show_cost_per_line,omitempty"`
+	PathStyle       *string `toml:"path_style,omitempty"`
 }
 
 // legacyLayout mirrors the old flat lines format ([][]string) so we can detect
@@ -172,6 +173,7 @@ func DefaultPowerlineConfig() *Config {
 	showTokens := true
 	showVelocity := true
 	showCostPerLine := true
+	pathStyleCompress := "compress"
 
 	return &Config{
 		Layout: Layout{
@@ -199,6 +201,9 @@ func DefaultPowerlineConfig() *Config {
 			"code_productivity": {
 				ShowVelocity:    &showVelocity,
 				ShowCostPerLine: &showCostPerLine,
+			},
+			"repo_info": {
+				PathStyle: &pathStyleCompress,
 			},
 		},
 	}
@@ -228,6 +233,24 @@ func (c *Config) GetBool(component, key string, fallback bool) bool {
 	case "show_cost_per_line":
 		if comp.ShowCostPerLine != nil {
 			return *comp.ShowCostPerLine
+		}
+	}
+
+	return fallback
+}
+
+// GetString retrieves a string value from the ComponentConfig for the given
+// component and key name. Returns fallback if the component or key is not set.
+func (c *Config) GetString(component, key, fallback string) string {
+	comp, ok := c.Components[component]
+	if !ok {
+		return fallback
+	}
+
+	switch key {
+	case "path_style":
+		if comp.PathStyle != nil {
+			return *comp.PathStyle
 		}
 	}
 
