@@ -158,7 +158,7 @@ show_velocity = true
 show_cost_per_line = true
 ```
 
-Set the `COLUMNS` environment variable if right-alignment appears off (the statusline reads `$COLUMNS` to determine terminal width, defaulting to 80).
+Terminal width is detected automatically via the terminal's stderr file descriptor. If detection fails (e.g., when piped), it defaults to 80 columns.
 
 > **Backward compatibility:** The old flat `lines = [["repo_info"], ...]` format is still supported and auto-migrated to the new format at load time.
 
