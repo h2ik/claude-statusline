@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/h2ik/claude-statusline/internal/config"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -13,11 +14,12 @@ import (
 type ContextWindow struct {
 	renderer *render.Renderer
 	config   *config.Config
+	icons    icons.IconSet
 }
 
 // NewContextWindow creates a new ContextWindow component.
-func NewContextWindow(r *render.Renderer, cfg *config.Config) *ContextWindow {
-	return &ContextWindow{renderer: r, config: cfg}
+func NewContextWindow(r *render.Renderer, cfg *config.Config, ic icons.IconSet) *ContextWindow {
+	return &ContextWindow{renderer: r, config: cfg, icons: ic}
 }
 
 // Name returns the component identifier.
@@ -39,7 +41,7 @@ func (c *ContextWindow) Render(in *input.StatusLineInput) string {
 
 	if pct >= 90 {
 		colorFunc = c.renderer.Red
-		warning = " \xe2\x9a\xa0\xef\xb8\x8f"
+		warning = " " + c.icons.Get(icons.Warning)
 	} else if pct >= 75 {
 		colorFunc = c.renderer.Red
 	} else if pct >= 50 {
@@ -59,7 +61,8 @@ func (c *ContextWindow) Render(in *input.StatusLineInput) string {
 		)
 	}
 
-	return fmt.Sprintf("\xf0\x9f\xa7\xa0 %s%s%s",
+	return fmt.Sprintf("%s %s%s%s",
+		c.icons.Get(icons.Brain),
 		colorFunc(fmt.Sprintf("%d%%", pct)),
 		colorFunc(tokens),
 		warning,

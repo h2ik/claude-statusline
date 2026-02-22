@@ -7,6 +7,7 @@ import (
 
 	"github.com/h2ik/claude-statusline/internal/cache"
 	"github.com/h2ik/claude-statusline/internal/config"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -16,7 +17,7 @@ func TestBedrockModel_Name(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	if bm.Name() != "bedrock_model" {
 		t.Errorf("expected 'bedrock_model', got %q", bm.Name())
@@ -28,7 +29,7 @@ func TestBedrockModel_Render_EmptyForNonARN(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Model: input.ModelInfo{
@@ -47,7 +48,7 @@ func TestBedrockModel_Render_ShowsRegionByDefault(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Model: input.ModelInfo{
@@ -72,7 +73,7 @@ func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
 		},
 	}
 
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Model: input.ModelInfo{
@@ -100,7 +101,7 @@ func TestGetFriendlyName_FromCatalog(t *testing.T) {
 	catalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"},{"id":"anthropic.claude-sonnet-4-20250514-v1:0","name":"Claude Sonnet 4"}]`
 	_ = c.Set("bedrock:model-catalog", []byte(catalog), 24*time.Hour)
 
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	// Should match via catalog
 	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-opus-4-6-v1")
@@ -115,7 +116,7 @@ func TestGetFriendlyName_FallbackToHardcoded(t *testing.T) {
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
 	// No catalog in cache — should fall back to hardcoded map
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-sonnet-4-20250514-v1:0")
 	if name != "Claude Sonnet 4" {
@@ -128,7 +129,7 @@ func TestGetFriendlyName_RawARNFallback(t *testing.T) {
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
-	bm := NewBedrockModel(r, c, cfg, nil)
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
 	// Totally unknown model — should return the raw ARN
 	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0")

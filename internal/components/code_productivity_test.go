@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/h2ik/claude-statusline/internal/config"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -12,7 +13,7 @@ import (
 func TestCodeProductivity_Name(t *testing.T) {
 	r := render.New()
 	cfg := config.DefaultConfig()
-	c := NewCodeProductivity(r, cfg)
+	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
 	if c.Name() != "code_productivity" {
 		t.Errorf("expected 'code_productivity', got %q", c.Name())
@@ -22,7 +23,7 @@ func TestCodeProductivity_Name(t *testing.T) {
 func TestCodeProductivity_Render_NoLinesChanged(t *testing.T) {
 	r := render.New()
 	cfg := config.DefaultConfig()
-	c := NewCodeProductivity(r, cfg)
+	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{
@@ -42,7 +43,7 @@ func TestCodeProductivity_Render_NoLinesChanged(t *testing.T) {
 func TestCodeProductivity_Render_BothMetrics(t *testing.T) {
 	r := render.New()
 	cfg := config.DefaultConfig()
-	c := NewCodeProductivity(r, cfg)
+	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{
@@ -54,8 +55,8 @@ func TestCodeProductivity_Render_BothMetrics(t *testing.T) {
 	}
 
 	output := c.Render(in)
-	if !strings.Contains(output, "✏️") {
-		t.Errorf("expected pencil emoji in output, got: %s", output)
+	if !strings.Contains(output, icons.New("emoji").Get(icons.Pencil)) {
+		t.Errorf("expected pencil icon in output, got: %s", output)
 	}
 	// 100 lines / 5 min = 20 lines/min
 	if !strings.Contains(output, "20 lines/min") {
@@ -79,7 +80,7 @@ func TestCodeProductivity_Render_VelocityOnly(t *testing.T) {
 			},
 		},
 	}
-	c := NewCodeProductivity(r, cfg)
+	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{
@@ -112,7 +113,7 @@ func TestCodeProductivity_Render_CostPerLineOnly(t *testing.T) {
 			},
 		},
 	}
-	c := NewCodeProductivity(r, cfg)
+	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{
@@ -136,7 +137,7 @@ func TestCodeProductivity_Render_CostPerLineOnly(t *testing.T) {
 func TestCodeProductivity_Render_ZeroDuration(t *testing.T) {
 	r := render.New()
 	cfg := config.DefaultConfig()
-	c := NewCodeProductivity(r, cfg)
+	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
 		Cost: input.CostInfo{

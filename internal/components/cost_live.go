@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cost"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -14,11 +15,12 @@ import (
 type CostLive struct {
 	renderer *render.Renderer
 	history  *cost.History
+	icons    icons.IconSet
 }
 
 // NewCostLive creates a new CostLive component.
-func NewCostLive(r *render.Renderer, h *cost.History) *CostLive {
-	return &CostLive{renderer: r, history: h}
+func NewCostLive(r *render.Renderer, h *cost.History, ic icons.IconSet) *CostLive {
+	return &CostLive{renderer: r, history: h, icons: ic}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -39,7 +41,8 @@ func (c *CostLive) Render(in *input.StatusLineInput) string {
 	}
 
 	// Display live session cost
-	return fmt.Sprintf("\xf0\x9f\x94\xa5 %s $%.2f",
+	return fmt.Sprintf("%s %s $%.2f",
+		c.icons.Get(icons.Fire),
 		c.renderer.Dimmed("LIVE"),
 		in.Cost.TotalCostUSD,
 	)

@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -10,11 +11,12 @@ import (
 // BurnRate displays the current spending velocity in dollars per minute.
 type BurnRate struct {
 	renderer *render.Renderer
+	icons    icons.IconSet
 }
 
 // NewBurnRate creates a new BurnRate component.
-func NewBurnRate(r *render.Renderer) *BurnRate {
-	return &BurnRate{renderer: r}
+func NewBurnRate(r *render.Renderer, ic icons.IconSet) *BurnRate {
+	return &BurnRate{renderer: r, icons: ic}
 }
 
 // Name returns the component identifier.
@@ -31,7 +33,8 @@ func (c *BurnRate) Render(in *input.StatusLineInput) string {
 	minutes := float64(in.Cost.TotalDurationMS) / 60000.0
 	ratePerMin := in.Cost.TotalCostUSD / minutes
 
-	return fmt.Sprintf("\xf0\x9f\x94\xa5 %s",
+	return fmt.Sprintf("%s %s",
+		c.icons.Get(icons.Fire),
 		c.renderer.Peach(fmt.Sprintf("$%.2f/min", ratePerMin)),
 	)
 }

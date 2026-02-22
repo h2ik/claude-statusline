@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/h2ik/claude-statusline/internal/git"
+	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
 )
@@ -13,11 +14,12 @@ import (
 // commits today.
 type Commits struct {
 	renderer *render.Renderer
+	icons    icons.IconSet
 }
 
 // NewCommits creates a new Commits component with the given renderer.
-func NewCommits(r *render.Renderer) *Commits {
-	return &Commits{renderer: r}
+func NewCommits(r *render.Renderer, ic icons.IconSet) *Commits {
+	return &Commits{renderer: r, icons: ic}
 }
 
 // Name returns the component identifier used for registry lookup.
@@ -32,7 +34,8 @@ func (c *Commits) Render(in *input.StatusLineInput) string {
 		return ""
 	}
 
-	return fmt.Sprintf("\xf0\x9f\x92\xbe %s %d",
+	return fmt.Sprintf("%s %s %d",
+		c.icons.Get(icons.FloppyDisk),
 		c.renderer.Dimmed("Commits:"),
 		count,
 	)
