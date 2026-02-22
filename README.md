@@ -112,7 +112,7 @@ Set `path_style` under `[components.repo_info]`:
 path_style = "compress"
 ```
 
-The powerline default config enables compression automatically.
+The powerline default config enables compression automatically on first run. Existing users must add the `[components.repo_info]` section to their config manually.
 
 ## Configuration
 

@@ -69,10 +69,16 @@ func TestCompressPath(t *testing.T) {
 			want:       "~",
 		},
 		{
-			name:       "no project dir with deep path",
+			name:       "no project dir with deep path single-char segments",
 			displayDir: "~/a/b/c/d",
 			projectDir: "",
 			want:       "~/a/b/c/d",
+		},
+		{
+			name:       "no project dir with multi-char segments",
+			displayDir: "~/Projects/foo/bar/baz",
+			projectDir: "",
+			want:       "~/P/f/b/baz",
 		},
 		{
 			name:       "no project dir with three segments",
