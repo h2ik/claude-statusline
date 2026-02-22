@@ -65,7 +65,7 @@ func main() {
 	registry := component.NewRegistry()
 
 	// Line 1 components
-	registry.Register(components.NewRepoInfo(r, ic))
+	registry.Register(components.NewRepoInfo(r, cfg, ic))
 
 	// Line 2 components
 	registry.Register(components.NewModelInfo(r, ic))
