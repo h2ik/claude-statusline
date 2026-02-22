@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
@@ -16,6 +15,8 @@ import (
 	"github.com/h2ik/claude-statusline/internal/icons"
 	"github.com/h2ik/claude-statusline/internal/input"
 	"github.com/h2ik/claude-statusline/internal/render"
+
+	"golang.org/x/term"
 )
 
 //nolint:unused // set via ldflags at build time by goreleaser
@@ -97,10 +98,8 @@ func main() {
 
 	// Determine terminal width for right-side alignment
 	termWidth := 80
-	if cols := os.Getenv("COLUMNS"); cols != "" {
-		if n, err := strconv.Atoi(cols); err == nil && n > 0 {
-			termWidth = n
-		}
+	if w, _, err := term.GetSize(int(os.Stderr.Fd())); err == nil && w > 0 {
+		termWidth = w
 	}
 
 	// Render each line
