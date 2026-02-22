@@ -79,6 +79,23 @@ Two rendering styles are available:
 
 Powerline mode groups components into colored segments by category (info, cost, metrics, activity, meta) and supports placing components on the right side of the terminal.
 
+### Icon styles
+
+Two icon sets are available:
+
+- **`emoji`** (default) — Standard Unicode emoji characters. Works everywhere, no special font required.
+- **`nerd-font`** — Single-cell [Nerd Font](https://www.nerdfonts.com/) glyphs. Renders cleanly in powerline segments without width miscalculations or background color bleed. Requires a Nerd Font-patched terminal font.
+
+Set `icon_style` in the `[layout]` section of your config:
+
+```toml
+[layout]
+style = "powerline"
+icon_style = "nerd-font"
+```
+
+When `icon_style` is omitted or empty, it defaults to `"emoji"`.
+
 ## Configuration
 
 The statusline reads its config from `~/.claude/statusline/config.toml`. A default file is created on first run.
@@ -88,6 +105,7 @@ The statusline reads its config from `~/.claude/statusline/config.toml`. A defau
 ```toml
 [layout]
 style = "default"
+icon_style = "emoji"
 
 [[layout.lines]]
 left = ["repo_info"]
@@ -119,6 +137,7 @@ Powerline mode uses colored background segments with arrow separators and suppor
 ```toml
 [layout]
 style = "powerline"
+icon_style = "nerd-font"
 
 [[layout.lines]]
 left  = ["repo_info", "bedrock_model", "model_info"]
