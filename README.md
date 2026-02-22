@@ -158,7 +158,7 @@ show_velocity = true
 show_cost_per_line = true
 ```
 
-Terminal width is detected automatically via the terminal's stderr file descriptor. If detection fails (e.g., when piped), it defaults to 80 columns.
+Terminal width is detected automatically. The statusline tries `stderr`/`stdout` tty detection, then `/dev/tty`, then the `COLUMNS` environment variable, and defaults to 80 columns. Set `COLUMNS` as an override when running as a subprocess (e.g., Claude Code) where tty detection is unavailable.
 
 > **Backward compatibility:** The old flat `lines = [["repo_info"], ...]` format is still supported and auto-migrated to the new format at load time.
 

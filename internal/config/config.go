@@ -19,6 +19,7 @@ type Config struct {
 type Layout struct {
 	Style     string       `toml:"style"`
 	IconStyle string       `toml:"icon_style"`
+	Padding   int          `toml:"padding"`
 	Lines     []LayoutLine `toml:"lines"`
 }
 
@@ -84,6 +85,9 @@ func Load(path string) (*Config, error) {
 		if cfg.Layout.Style == "" {
 			cfg.Layout.Style = "default"
 		}
+		if cfg.Layout.Padding == 0 {
+			cfg.Layout.Padding = 5
+		}
 		return &cfg, nil
 	}
 
@@ -138,6 +142,7 @@ func DefaultConfig() *Config {
 		Layout: Layout{
 			Style:     "default",
 			IconStyle: "emoji",
+			Padding:   5,
 			Lines: []LayoutLine{
 				{Left: []string{"repo_info"}},
 				{Left: []string{"bedrock_model", "model_info", "commits", "submodules", "version_info", "time_display"}},
@@ -172,6 +177,7 @@ func DefaultPowerlineConfig() *Config {
 		Layout: Layout{
 			Style:     "powerline",
 			IconStyle: "nerd-font",
+			Padding:   5,
 			Lines: []LayoutLine{
 				{
 					Left:  []string{"repo_info", "bedrock_model", "model_info"},

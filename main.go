@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/h2ik/claude-statusline/internal/cache"
@@ -96,11 +99,14 @@ func main() {
 		}
 	}
 
-	// Determine terminal width for right-side alignment
-	termWidth := 80
-	if w, _, err := term.GetSize(int(os.Stderr.Fd())); err == nil && w > 0 {
-		termWidth = w
-	}
+	// Determine terminal width for right-side alignment.
+	// When invoked as a subprocess (e.g. by Claude Code), all fds are pipes
+	// so tty detection fails. Try multiple strategies:
+	//   1. term.GetSize on stderr/stdout (works in a real terminal)
+	//   2. /dev/tty (works for some subprocesses with a controlling terminal)
+	//   3. $COLUMNS env var (user-configurable override)
+	//   4. Default to 80
+	termWidth := detectTerminalWidth() - cfg.Layout.Padding
 
 	// Render each line
 	var lineData []render.LineData
@@ -119,4 +125,42 @@ func main() {
 
 	output := r.RenderOutput(lineData, termWidth)
 	_, _ = fmt.Fprint(os.Stdout, output)
+}
+
+// detectTerminalWidth tries multiple strategies to determine the terminal width.
+func detectTerminalWidth() int {
+	// Try stderr then stdout (stdin is consumed by JSON input)
+	for _, f := range []*os.File{os.Stderr, os.Stdout} {
+		if w, _, err := term.GetSize(int(f.Fd())); err == nil && w > 0 {
+			return w
+		}
+	}
+
+	// Try /dev/tty directly — works for some subprocesses with a controlling terminal
+	if tty, err := os.Open("/dev/tty"); err == nil {
+		w, _, err := term.GetSize(int(tty.Fd()))
+		tty.Close()
+		if err == nil && w > 0 {
+			return w
+		}
+	}
+
+	// Ask tmux for pane width — Claude Code runs inside a tmux pane
+	// where all fds are pipes, but tmux knows the real dimensions
+	if os.Getenv("TMUX") != "" {
+		if out, err := exec.Command("tmux", "display-message", "-p", "#{pane_width}").Output(); err == nil {
+			if n, err := strconv.Atoi(strings.TrimSpace(string(out))); err == nil && n > 0 {
+				return n
+			}
+		}
+	}
+
+	// Fall back to COLUMNS env var
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if n, err := strconv.Atoi(cols); err == nil && n > 0 {
+			return n
+		}
+	}
+
+	return 80
 }
