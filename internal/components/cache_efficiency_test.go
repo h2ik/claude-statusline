@@ -10,7 +10,7 @@ import (
 )
 
 func TestCacheEfficiency_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	if c.Name() != "cache_efficiency" {
@@ -19,7 +19,7 @@ func TestCacheEfficiency_Name(t *testing.T) {
 }
 
 func TestCacheEfficiency_Render_ZeroTokens(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -37,7 +37,7 @@ func TestCacheEfficiency_Render_ZeroTokens(t *testing.T) {
 }
 
 func TestCacheEfficiency_Render_HighEfficiency(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -59,7 +59,7 @@ func TestCacheEfficiency_Render_HighEfficiency(t *testing.T) {
 }
 
 func TestCacheEfficiency_Render_LowEfficiency(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -78,7 +78,7 @@ func TestCacheEfficiency_Render_LowEfficiency(t *testing.T) {
 }
 
 func TestCacheEfficiency_Render_MediumEfficiency(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCacheEfficiency(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{

@@ -13,7 +13,7 @@ import (
 )
 
 func TestRepoInfo_Render(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := config.DefaultConfig()
 	c := NewRepoInfo(r, cfg, icons.New("emoji"))
 

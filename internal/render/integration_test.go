@@ -18,7 +18,7 @@ func (m *mockComp) Name() string                           { return m.name }
 func (m *mockComp) Render(_ *input.StatusLineInput) string { return m.output }
 
 func TestPowerlinePipeline_EndToEnd(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	r.SetStyle(render.NewPowerlineStyle(r))
 
 	registry := component.NewRegistry()
@@ -83,7 +83,7 @@ func TestPowerlinePipeline_EndToEnd(t *testing.T) {
 }
 
 func TestDefaultPipeline_EndToEnd(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	// DefaultStyle is already set in New(), no SetStyle needed
 
 	registry := component.NewRegistry()
@@ -112,7 +112,7 @@ func TestDefaultPipeline_EndToEnd(t *testing.T) {
 }
 
 func TestPowerlinePipeline_SameCategoryMerge(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	r.SetStyle(render.NewPowerlineStyle(r))
 
 	registry := component.NewRegistry()
@@ -138,7 +138,7 @@ func TestPowerlinePipeline_SameCategoryMerge(t *testing.T) {
 }
 
 func TestPowerlinePipeline_EmptyComponentsFiltered(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	r.SetStyle(render.NewPowerlineStyle(r))
 
 	registry := component.NewRegistry()

@@ -19,7 +19,7 @@ import (
 // ============================================================
 
 func TestCostMonthly_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
 	c := NewCostMonthly(r, s, icons.New("emoji"))
@@ -30,7 +30,7 @@ func TestCostMonthly_Name(t *testing.T) {
 }
 
 func TestCostMonthly_Render_EmptyHistory(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
 	c := NewCostMonthly(r, s, icons.New("emoji"))
@@ -54,7 +54,7 @@ func TestCostMonthly_Render_WithEntries(t *testing.T) {
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-24*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
 	c := NewCostMonthly(r, s, icons.New("emoji"))
@@ -71,7 +71,7 @@ func TestCostMonthly_Render_WithEntries(t *testing.T) {
 // ============================================================
 
 func TestCostWeekly_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
 	c := NewCostWeekly(r, s, icons.New("emoji"))
@@ -82,7 +82,7 @@ func TestCostWeekly_Name(t *testing.T) {
 }
 
 func TestCostWeekly_Render_EmptyHistory(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
 	c := NewCostWeekly(r, s, icons.New("emoji"))
@@ -109,7 +109,7 @@ func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-10*24*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
 	c := NewCostWeekly(r, s, icons.New("emoji"))
@@ -126,7 +126,7 @@ func TestCostWeekly_Render_FiltersOldEntries(t *testing.T) {
 // ============================================================
 
 func TestCostDaily_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
 	c := NewCostDaily(r, s, icons.New("emoji"))
@@ -137,7 +137,7 @@ func TestCostDaily_Name(t *testing.T) {
 }
 
 func TestCostDaily_Render_EmptyHistory(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(t.TempDir(), ca)
 	c := NewCostDaily(r, s, icons.New("emoji"))
@@ -167,7 +167,7 @@ func TestCostDaily_Render_IncludesTodayEntries(t *testing.T) {
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+time.Now().Add(-48*time.Hour).Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
 	c := NewCostDaily(r, s, icons.New("emoji"))
@@ -192,7 +192,7 @@ func TestCostDaily_Render_ExcludesYesterdayEntries(t *testing.T) {
 		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":10000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"`+yesterday.Format(time.RFC3339Nano)+`"}`+"\n",
 	), 0644)
 
-	r := render.New()
+	r := render.New(nil)
 	ca := cache.New(t.TempDir())
 	s := cost.NewTranscriptScanner(projectsDir, ca)
 	c := NewCostDaily(r, s, icons.New("emoji"))
@@ -209,7 +209,7 @@ func TestCostDaily_Render_ExcludesYesterdayEntries(t *testing.T) {
 // ============================================================
 
 func TestCostLive_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
 	c := NewCostLive(r, h, icons.New("emoji"))
 
@@ -219,7 +219,7 @@ func TestCostLive_Name(t *testing.T) {
 }
 
 func TestCostLive_Render_ZeroCost(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
 	c := NewCostLive(r, h, icons.New("emoji"))
 
@@ -237,7 +237,7 @@ func TestCostLive_Render_ZeroCost(t *testing.T) {
 }
 
 func TestCostLive_Render_DisplaysCost(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(filepath.Join(t.TempDir(), "cost.jsonl"))
 	c := NewCostLive(r, h, icons.New("emoji"))
 
@@ -256,7 +256,7 @@ func TestCostLive_Render_AppendsToHistory(t *testing.T) {
 	tmpDir := t.TempDir()
 	histPath := filepath.Join(tmpDir, "cost.jsonl")
 
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(histPath)
 	c := NewCostLive(r, h, icons.New("emoji"))
 
@@ -286,7 +286,7 @@ func TestCostLive_Render_SkipsAppendWhenNoSession(t *testing.T) {
 	tmpDir := t.TempDir()
 	histPath := filepath.Join(tmpDir, "cost.jsonl")
 
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(histPath)
 	c := NewCostLive(r, h, icons.New("emoji"))
 
@@ -307,7 +307,7 @@ func TestCostLive_Render_SkipsAppendWhenZeroCost(t *testing.T) {
 	tmpDir := t.TempDir()
 	histPath := filepath.Join(tmpDir, "cost.jsonl")
 
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(histPath)
 	c := NewCostLive(r, h, icons.New("emoji"))
 

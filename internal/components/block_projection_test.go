@@ -10,7 +10,7 @@ import (
 )
 
 func TestBlockProjection_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBlockProjection(r, icons.New("emoji"))
 
 	if c.Name() != "block_projection" {
@@ -19,7 +19,7 @@ func TestBlockProjection_Name(t *testing.T) {
 }
 
 func TestBlockProjection_Render_ZeroUtilization(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -34,7 +34,7 @@ func TestBlockProjection_Render_ZeroUtilization(t *testing.T) {
 }
 
 func TestBlockProjection_Render_LowUtilization(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -55,7 +55,7 @@ func TestBlockProjection_Render_LowUtilization(t *testing.T) {
 }
 
 func TestBlockProjection_Render_HighUtilization(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -73,7 +73,7 @@ func TestBlockProjection_Render_HighUtilization(t *testing.T) {
 }
 
 func TestBlockProjection_Render_OnlyFiveHourData(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBlockProjection(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{

@@ -6,7 +6,7 @@ import (
 )
 
 func TestRenderer_RenderLines(t *testing.T) {
-	r := New()
+	r := New(nil)
 
 	lines := [][]string{
 		{"component1", "component2"},
@@ -28,7 +28,7 @@ func TestRenderer_RenderLines(t *testing.T) {
 }
 
 func TestRenderer_RenderLines_FiltersEmpty(t *testing.T) {
-	r := New()
+	r := New(nil)
 
 	lines := [][]string{
 		{"component1", "", "component2"},
@@ -57,7 +57,7 @@ func TestRenderer_RenderLines_FiltersEmpty(t *testing.T) {
 }
 
 func TestRenderer_RenderLines_Empty(t *testing.T) {
-	r := New()
+	r := New(nil)
 
 	lines := [][]string{}
 	output := r.RenderLines(lines)
@@ -68,7 +68,7 @@ func TestRenderer_RenderLines_Empty(t *testing.T) {
 }
 
 func TestRenderer_RenderOutput_DefaultStyle(t *testing.T) {
-	r := New()
+	r := New(nil)
 
 	lines := []LineData{
 		{Left: []string{"alpha", "beta"}, LeftNames: []string{"repo_info", "model_info"}},
@@ -90,7 +90,7 @@ func TestRenderer_RenderOutput_DefaultStyle(t *testing.T) {
 }
 
 func TestRenderer_RenderOutput_FiltersEmptyLines(t *testing.T) {
-	r := New()
+	r := New(nil)
 
 	lines := []LineData{
 		{Left: []string{"alpha"}},
@@ -106,7 +106,7 @@ func TestRenderer_RenderOutput_FiltersEmptyLines(t *testing.T) {
 }
 
 func TestRenderer_SetStyle(t *testing.T) {
-	r := New()
+	r := New(nil)
 	custom := NewDefaultStyle(" | ")
 	r.SetStyle(custom)
 
@@ -120,7 +120,7 @@ func TestRenderer_SetStyle(t *testing.T) {
 }
 
 func TestRenderer_StyleHelpers(t *testing.T) {
-	r := New()
+	r := New(nil)
 
 	// Each style helper should return a non-empty string containing the input
 	tests := []struct {
@@ -149,5 +149,28 @@ func TestRenderer_StyleHelpers(t *testing.T) {
 				t.Errorf("%s result %q does not contain input %q", tt.name, result, tt.input)
 			}
 		})
+	}
+}
+
+func TestRenderer_UsesThemeColors(t *testing.T) {
+	r := New(&ThemeLatte)
+	result := r.Blue("hello")
+	if result == "" {
+		t.Fatal("Blue() returned empty string")
+	}
+	if !strings.Contains(result, "hello") {
+		t.Errorf("Blue() result does not contain input text: %q", result)
+	}
+	rMocha := New(&ThemeMocha)
+	mochaBlueStyling := rMocha.Blue("hello")
+	if result == mochaBlueStyling {
+		t.Error("Latte renderer Blue() produced same output as Mocha renderer Blue() -- theme not applied")
+	}
+}
+
+func TestRenderer_DefaultThemeIsMocha(t *testing.T) {
+	r := New(nil)
+	if r == nil {
+		t.Fatal("New(nil) returned nil")
 	}
 }

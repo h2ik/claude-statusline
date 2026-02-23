@@ -8,7 +8,8 @@ import (
 	"github.com/muesli/termenv"
 )
 
-// Catppuccin Mocha colors (hardcoded)
+// Catppuccin Mocha colors (kept for backward compatibility with segment.go).
+// Task 3 will remove these once segment categories are theme-aware.
 var (
 	ColorOverlay0 = lipgloss.Color("#6c7086") // Dimmed/labels
 	ColorText     = lipgloss.Color("#cdd6f4") // Text/values
@@ -26,12 +27,19 @@ type Renderer struct {
 	separator string
 	lg        *lipgloss.Renderer
 	style     Style
+	theme     Theme
 }
 
 // New creates a Renderer with forced TrueColor output.
 // Claude Code captures stdout so lipgloss won't auto-detect a TTY;
 // we force color output with termenv.WithUnsafe().
-func New() *Renderer {
+// If theme is nil, ThemeMocha is used.
+func New(theme *Theme) *Renderer {
+	t := ThemeMocha
+	if theme != nil {
+		t = *theme
+	}
+
 	lg := lipgloss.NewRenderer(
 		os.Stdout,
 		termenv.WithUnsafe(),
@@ -42,12 +50,18 @@ func New() *Renderer {
 		separator: " │ ",
 		lg:        lg,
 		style:     NewDefaultStyle(" │ "),
+		theme:     t,
 	}
 }
 
 // SetStyle replaces the active rendering style (e.g. DefaultStyle, PowerlineStyle).
 func (r *Renderer) SetStyle(s Style) {
 	r.style = s
+}
+
+// Theme returns the active theme.
+func (r *Renderer) Theme() Theme {
+	return r.theme
 }
 
 // RenderOutput renders a slice of LineData through the active Style, filtering
@@ -83,49 +97,40 @@ func (r *Renderer) RenderLines(lines [][]string) string {
 	return r.RenderOutput(data, 80)
 }
 
-// Style helpers -- each wraps the input string with a Catppuccin Mocha color.
+// Style helpers -- each wraps the input string with the active theme's color.
 
-// Dimmed renders text in Overlay0 (dimmed/label color).
 func (r *Renderer) Dimmed(s string) string {
-	return r.lg.NewStyle().Foreground(ColorOverlay0).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Overlay0).Render(s)
 }
 
-// Text renders text in the default text color.
 func (r *Renderer) Text(s string) string {
-	return r.lg.NewStyle().Foreground(ColorText).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Text).Render(s)
 }
 
-// Green renders text in green (clean/good status).
 func (r *Renderer) Green(s string) string {
-	return r.lg.NewStyle().Foreground(ColorGreen).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Green).Render(s)
 }
 
-// Red renders text in red (critical status).
 func (r *Renderer) Red(s string) string {
-	return r.lg.NewStyle().Foreground(ColorRed).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Red).Render(s)
 }
 
-// Yellow renders text in yellow (warning status).
 func (r *Renderer) Yellow(s string) string {
-	return r.lg.NewStyle().Foreground(ColorYellow).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Yellow).Render(s)
 }
 
-// Blue renders text in blue (paths/info).
 func (r *Renderer) Blue(s string) string {
-	return r.lg.NewStyle().Foreground(ColorBlue).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Blue).Render(s)
 }
 
-// Mauve renders text in mauve (accent color).
 func (r *Renderer) Mauve(s string) string {
-	return r.lg.NewStyle().Foreground(ColorMauve).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Mauve).Render(s)
 }
 
-// Peach renders text in peach (cost-related).
 func (r *Renderer) Peach(s string) string {
-	return r.lg.NewStyle().Foreground(ColorPeach).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Peach).Render(s)
 }
 
-// Teal renders text in teal (secondary info).
 func (r *Renderer) Teal(s string) string {
-	return r.lg.NewStyle().Foreground(ColorTeal).Render(s)
+	return r.lg.NewStyle().Foreground(r.theme.Teal).Render(s)
 }
