@@ -15,12 +15,13 @@ const (
 // separated by Nerd Font powerline arrow characters. Adjacent components in the
 // same semantic category are merged into a single segment.
 type PowerlineStyle struct {
-	lg *lipgloss.Renderer
+	lg    *lipgloss.Renderer
+	theme Theme
 }
 
 // NewPowerlineStyle creates a PowerlineStyle renderer from an existing Renderer.
 func NewPowerlineStyle(r *Renderer) *PowerlineStyle {
-	return &PowerlineStyle{lg: r.lg}
+	return &PowerlineStyle{lg: r.lg, theme: r.theme}
 }
 
 // segment groups one or more component outputs that share the same SegmentCategory.
@@ -31,7 +32,7 @@ type segment struct {
 
 // buildSegments groups consecutive components by SegmentCategory, merging adjacent
 // same-category components into a single segment. Empty components are skipped.
-func buildSegments(names, contents []string) []segment {
+func buildSegments(names, contents []string, theme *Theme) []segment {
 	var segments []segment
 	for i, content := range contents {
 		stripped := StripANSI(content)
@@ -42,7 +43,7 @@ func buildSegments(names, contents []string) []segment {
 		if i < len(names) {
 			name = names[i]
 		}
-		cat := SegmentCategoryFor(name)
+		cat := SegmentCategoryFor(name, theme)
 		if len(segments) > 0 && segments[len(segments)-1].category == cat {
 			segments[len(segments)-1].parts = append(segments[len(segments)-1].parts, stripped)
 		} else {
@@ -117,8 +118,8 @@ func (s *PowerlineStyle) renderRightSegments(segments []segment) string {
 // on the left, right-aligned segments on the right, and space-padding in between
 // to fill the terminal width.
 func (s *PowerlineStyle) RenderLine(line LineData, termWidth int) string {
-	leftSegs := buildSegments(line.LeftNames, line.Left)
-	rightSegs := buildSegments(line.RightNames, line.Right)
+	leftSegs := buildSegments(line.LeftNames, line.Left, &s.theme)
+	rightSegs := buildSegments(line.RightNames, line.Right, &s.theme)
 	if len(leftSegs) == 0 && len(rightSegs) == 0 {
 		return ""
 	}

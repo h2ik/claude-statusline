@@ -111,7 +111,7 @@ func TestPowerlineStyle_ImplementsStyle(t *testing.T) {
 func TestBuildSegments_MergesSameCategory(t *testing.T) {
 	names := []string{"cost_daily", "cost_live", "repo_info"}
 	contents := []string{"$0.89", "$2.47", "~/repo"}
-	segs := buildSegments(names, contents)
+	segs := buildSegments(names, contents, &ThemeMocha)
 	// cost_daily+cost_live merge into 1, repo_info is separate = 2 segments
 	if len(segs) != 2 {
 		t.Errorf("expected 2 segments, got %d", len(segs))
@@ -124,7 +124,7 @@ func TestBuildSegments_MergesSameCategory(t *testing.T) {
 func TestBuildSegments_SkipsEmpty(t *testing.T) {
 	names := []string{"repo_info", "model_info", "cost_daily"}
 	contents := []string{"~/repo", "", "$0.89"}
-	segs := buildSegments(names, contents)
+	segs := buildSegments(names, contents, &ThemeMocha)
 	// repo_info is Info, model_info is skipped (empty), cost_daily is Cost = 2 segments
 	if len(segs) != 2 {
 		t.Errorf("expected 2 segments (empty skipped), got %d", len(segs))
