@@ -96,6 +96,25 @@ icon_style = "nerd-font"
 
 When `icon_style` is omitted or empty, it defaults to `"emoji"`.
 
+### Color themes
+
+Four [Catppuccin](https://catppuccin.com/) color palettes are available:
+
+- **`catppuccin-mocha`** (default) — Dark theme with pastel accents
+- **`catppuccin-macchiato`** — Dark theme, slightly lighter base
+- **`catppuccin-frappe`** — Medium-dark theme
+- **`catppuccin-latte`** — Light theme with saturated accents
+
+Set `theme` in the `[layout]` section of your config:
+
+```toml
+[layout]
+theme = "catppuccin-frappe"
+style = "powerline"
+```
+
+When `theme` is omitted or empty, it defaults to `"catppuccin-mocha"`. The light theme (Latte) automatically inverts powerline segment contrast for readability.
+
 ### Path compression
 
 Long directory paths eat into available terminal width, especially in powerline mode with right-aligned components. The `repo_info` component supports Fish-style path compression that shortens intermediate directories to their first letter while keeping the repository name and subdirectories intact.
@@ -122,6 +141,7 @@ The statusline reads its config from `~/.claude/statusline/config.toml`. A defau
 
 ```toml
 [layout]
+theme = "catppuccin-mocha"
 style = "default"
 icon_style = "emoji"
 
@@ -154,6 +174,7 @@ Powerline mode uses colored background segments with arrow separators and suppor
 
 ```toml
 [layout]
+theme = "catppuccin-mocha"
 style = "powerline"
 icon_style = "nerd-font"
 
