@@ -44,19 +44,25 @@ func main() {
 	costDir := filepath.Join(homeDir, ".claude", "statusline", "costs")
 	projectsDir := filepath.Join(homeDir, ".claude", "projects")
 
-	c := cache.New(cacheDir)
-	_ = c.Prune(30 * 24 * time.Hour)
-	r := render.New(nil)
-	h := cost.NewHistory(filepath.Join(costDir, "history.jsonl"))
-	scanner := cost.NewTranscriptScanner(projectsDir, c)
-
-	// Load configuration
+	// Load configuration (before renderer, so theme is available)
 	configPath := filepath.Join(homeDir, ".claude", "statusline", "config.toml")
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Resolve theme from config
+	theme, ok := render.ThemeByName(cfg.Layout.Theme)
+	if !ok {
+		fmt.Fprintf(os.Stderr, "unknown theme %q, using catppuccin-mocha\n", cfg.Layout.Theme)
+	}
+
+	c := cache.New(cacheDir)
+	_ = c.Prune(30 * 24 * time.Hour)
+	r := render.New(&theme)
+	h := cost.NewHistory(filepath.Join(costDir, "history.jsonl"))
+	scanner := cost.NewTranscriptScanner(projectsDir, c)
 
 	// Create icon set from config
 	ic := icons.New(cfg.Layout.IconStyle)
