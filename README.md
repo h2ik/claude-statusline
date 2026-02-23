@@ -2,7 +2,7 @@
 
 A fast, informative statusline for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — built in Go.
 
-![claude-statusline example](assets/example.png)
+![claude-statusline example](assets/themes.png)
 
 ## What It Does
 
