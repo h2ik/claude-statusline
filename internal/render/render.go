@@ -8,20 +8,6 @@ import (
 	"github.com/muesli/termenv"
 )
 
-// Catppuccin Mocha colors (kept for backward compatibility with segment.go).
-// Task 3 will remove these once segment categories are theme-aware.
-var (
-	ColorOverlay0 = lipgloss.Color("#6c7086") // Dimmed/labels
-	ColorText     = lipgloss.Color("#cdd6f4") // Text/values
-	ColorGreen    = lipgloss.Color("#a6e3a1") // Clean/good
-	ColorRed      = lipgloss.Color("#f38ba8") // Critical
-	ColorYellow   = lipgloss.Color("#f9e2af") // Warning
-	ColorBlue     = lipgloss.Color("#89b4fa") // Paths/info
-	ColorMauve    = lipgloss.Color("#cba6f7") // Accent
-	ColorPeach    = lipgloss.Color("#fab387") // Costs
-	ColorTeal     = lipgloss.Color("#94e2d5") // Secondary
-)
-
 // Renderer handles styling and layout of statusline components.
 type Renderer struct {
 	separator string
