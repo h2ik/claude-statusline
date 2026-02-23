@@ -31,6 +31,7 @@ func New(theme *Theme) *Renderer {
 		termenv.WithUnsafe(),
 		termenv.WithProfile(termenv.TrueColor),
 	)
+	lg.SetColorProfile(termenv.TrueColor)
 
 	return &Renderer{
 		separator: " │ ",
