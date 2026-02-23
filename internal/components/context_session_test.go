@@ -15,7 +15,7 @@ import (
 // ============================================================
 
 func TestContextWindow_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -25,7 +25,7 @@ func TestContextWindow_Name(t *testing.T) {
 }
 
 func TestContextWindow_Render_EmptyWhenZeroPercent(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -42,7 +42,7 @@ func TestContextWindow_Render_EmptyWhenZeroPercent(t *testing.T) {
 }
 
 func TestContextWindow_Render_GreenZone(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -62,7 +62,7 @@ func TestContextWindow_Render_GreenZone(t *testing.T) {
 }
 
 func TestContextWindow_Render_YellowZone(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -79,7 +79,7 @@ func TestContextWindow_Render_YellowZone(t *testing.T) {
 }
 
 func TestContextWindow_Render_RedZone(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -96,7 +96,7 @@ func TestContextWindow_Render_RedZone(t *testing.T) {
 }
 
 func TestContextWindow_Render_WarningAt95(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -116,7 +116,7 @@ func TestContextWindow_Render_WarningAt95(t *testing.T) {
 }
 
 func TestContextWindow_Render_WithTokenCounts(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
 
@@ -138,7 +138,7 @@ func TestContextWindow_Render_WithTokenCounts(t *testing.T) {
 }
 
 func TestContextWindow_Render_HidesTokensWhenConfigured(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	falseVal := false
 	cfg := &config.Config{
 		Components: map[string]config.ComponentConfig{
@@ -171,7 +171,7 @@ func TestContextWindow_Render_HidesTokensWhenConfigured(t *testing.T) {
 }
 
 func TestContextWindow_Render_ShowsTokensByDefault(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	// Empty config - no explicit show_tokens setting, should default to true
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 	c := NewContextWindow(r, cfg, icons.New("emoji"))
@@ -198,7 +198,7 @@ func TestContextWindow_Render_ShowsTokensByDefault(t *testing.T) {
 // ============================================================
 
 func TestSessionMode_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSessionMode(r, icons.New("emoji"))
 
 	if c.Name() != "session_mode" {
@@ -207,7 +207,7 @@ func TestSessionMode_Name(t *testing.T) {
 }
 
 func TestSessionMode_Render_EmptyWhenNoStyle(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -223,7 +223,7 @@ func TestSessionMode_Render_EmptyWhenNoStyle(t *testing.T) {
 }
 
 func TestSessionMode_Render_EmptyWhenDefault(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -239,7 +239,7 @@ func TestSessionMode_Render_EmptyWhenDefault(t *testing.T) {
 }
 
 func TestSessionMode_Render_ExplanatoryStyle(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -261,7 +261,7 @@ func TestSessionMode_Render_ExplanatoryStyle(t *testing.T) {
 }
 
 func TestSessionMode_Render_UnknownStyle(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSessionMode(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{

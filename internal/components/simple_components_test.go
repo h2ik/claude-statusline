@@ -16,7 +16,7 @@ import (
 // ============================================================
 
 func TestModelInfo_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	if c.Name() != "model_info" {
@@ -25,7 +25,7 @@ func TestModelInfo_Name(t *testing.T) {
 }
 
 func TestModelInfo_Render_OpusEmoji(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -42,7 +42,7 @@ func TestModelInfo_Render_OpusEmoji(t *testing.T) {
 }
 
 func TestModelInfo_Render_SonnetEmoji(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -59,7 +59,7 @@ func TestModelInfo_Render_SonnetEmoji(t *testing.T) {
 }
 
 func TestModelInfo_Render_HaikuEmoji(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -76,7 +76,7 @@ func TestModelInfo_Render_HaikuEmoji(t *testing.T) {
 }
 
 func TestModelInfo_Render_UnknownModel(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -93,7 +93,7 @@ func TestModelInfo_Render_UnknownModel(t *testing.T) {
 }
 
 func TestModelInfo_Render_EmptyDisplayName(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -107,7 +107,7 @@ func TestModelInfo_Render_EmptyDisplayName(t *testing.T) {
 }
 
 func TestModelInfo_Render_BedrockARN_ReturnsEmpty(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewModelInfo(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -125,7 +125,7 @@ func TestModelInfo_Render_BedrockARN_ReturnsEmpty(t *testing.T) {
 // ============================================================
 
 func TestCommits_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCommits(r, icons.New("emoji"))
 
 	if c.Name() != "commits" {
@@ -134,7 +134,7 @@ func TestCommits_Name(t *testing.T) {
 }
 
 func TestCommits_Render_NonGitDir(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewCommits(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -154,7 +154,7 @@ func TestCommits_Render_NonGitDir(t *testing.T) {
 // ============================================================
 
 func TestSubmodules_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSubmodules(r, icons.New("emoji"))
 
 	if c.Name() != "submodules" {
@@ -163,7 +163,7 @@ func TestSubmodules_Name(t *testing.T) {
 }
 
 func TestSubmodules_Render_NonGitDir(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewSubmodules(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -183,7 +183,7 @@ func TestSubmodules_Render_NonGitDir(t *testing.T) {
 // ============================================================
 
 func TestVersionInfo_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	tmpDir := t.TempDir()
 	c := NewVersionInfo(r, cache.New(tmpDir))
 
@@ -197,7 +197,7 @@ func TestVersionInfo_Name(t *testing.T) {
 // ============================================================
 
 func TestTimeDisplay_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewTimeDisplay(r, icons.New("emoji"))
 
 	if c.Name() != "time_display" {
@@ -206,7 +206,7 @@ func TestTimeDisplay_Name(t *testing.T) {
 }
 
 func TestTimeDisplay_Render_ContainsTimePattern(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewTimeDisplay(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{}
@@ -221,7 +221,7 @@ func TestTimeDisplay_Render_ContainsTimePattern(t *testing.T) {
 }
 
 func TestTimeDisplay_Render_ContainsClockEmoji(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewTimeDisplay(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{}

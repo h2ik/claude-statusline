@@ -13,7 +13,7 @@ import (
 )
 
 func TestBedrockModel_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
@@ -25,7 +25,7 @@ func TestBedrockModel_Name(t *testing.T) {
 }
 
 func TestBedrockModel_Render_EmptyForNonARN(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
@@ -44,7 +44,7 @@ func TestBedrockModel_Render_EmptyForNonARN(t *testing.T) {
 }
 
 func TestBedrockModel_Render_ShowsRegionByDefault(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
@@ -63,7 +63,7 @@ func TestBedrockModel_Render_ShowsRegionByDefault(t *testing.T) {
 }
 
 func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := cache.New(t.TempDir())
 
 	falseVal := false
@@ -92,7 +92,7 @@ func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
 }
 
 func TestGetFriendlyName_FromCatalog(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cacheDir := t.TempDir()
 	c := cache.New(cacheDir)
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
@@ -111,7 +111,7 @@ func TestGetFriendlyName_FromCatalog(t *testing.T) {
 }
 
 func TestGetFriendlyName_FallbackToHardcoded(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
@@ -125,7 +125,7 @@ func TestGetFriendlyName_FallbackToHardcoded(t *testing.T) {
 }
 
 func TestGetFriendlyName_RawARNFallback(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := cache.New(t.TempDir())
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 

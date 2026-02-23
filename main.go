@@ -46,7 +46,7 @@ func main() {
 
 	c := cache.New(cacheDir)
 	_ = c.Prune(30 * 24 * time.Hour)
-	r := render.New()
+	r := render.New(nil)
 	h := cost.NewHistory(filepath.Join(costDir, "history.jsonl"))
 	scanner := cost.NewTranscriptScanner(projectsDir, c)
 

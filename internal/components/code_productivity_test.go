@@ -11,7 +11,7 @@ import (
 )
 
 func TestCodeProductivity_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := config.DefaultConfig()
 	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
@@ -21,7 +21,7 @@ func TestCodeProductivity_Name(t *testing.T) {
 }
 
 func TestCodeProductivity_Render_NoLinesChanged(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := config.DefaultConfig()
 	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
@@ -41,7 +41,7 @@ func TestCodeProductivity_Render_NoLinesChanged(t *testing.T) {
 }
 
 func TestCodeProductivity_Render_BothMetrics(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := config.DefaultConfig()
 	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 
@@ -69,7 +69,7 @@ func TestCodeProductivity_Render_BothMetrics(t *testing.T) {
 }
 
 func TestCodeProductivity_Render_VelocityOnly(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	showVelocity := true
 	showCostPerLine := false
 	cfg := &config.Config{
@@ -102,7 +102,7 @@ func TestCodeProductivity_Render_VelocityOnly(t *testing.T) {
 }
 
 func TestCodeProductivity_Render_CostPerLineOnly(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	showVelocity := false
 	showCostPerLine := true
 	cfg := &config.Config{
@@ -135,7 +135,7 @@ func TestCodeProductivity_Render_CostPerLineOnly(t *testing.T) {
 }
 
 func TestCodeProductivity_Render_ZeroDuration(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	cfg := config.DefaultConfig()
 	c := NewCodeProductivity(r, cfg, icons.New("emoji"))
 

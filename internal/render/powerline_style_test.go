@@ -6,7 +6,7 @@ import (
 )
 
 func TestPowerlineStyle_RenderLine_LeftOnly(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	line := LineData{
 		Left:      []string{"~/projects", "Claude"},
 		LeftNames: []string{"repo_info", "model_info"},
@@ -23,7 +23,7 @@ func TestPowerlineStyle_RenderLine_LeftOnly(t *testing.T) {
 }
 
 func TestPowerlineStyle_RenderLine_DifferentCategories(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	// repo_info is Info (blue), cost_daily is Cost (peach) -- different categories, should have arrow between
 	line := LineData{
 		Left:      []string{"~/projects", "$0.89"},
@@ -38,7 +38,7 @@ func TestPowerlineStyle_RenderLine_DifferentCategories(t *testing.T) {
 }
 
 func TestPowerlineStyle_RenderLine_RightOnly(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	// time_display is Dim, version_info is Meta -- different categories
 	line := LineData{
 		Right:      []string{"14:32", "CC:0.3.2"},
@@ -51,7 +51,7 @@ func TestPowerlineStyle_RenderLine_RightOnly(t *testing.T) {
 }
 
 func TestPowerlineStyle_RenderLine_EmptyLine(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	line := LineData{}
 	result := s.RenderLine(line, 80)
 	if result != "" {
@@ -60,7 +60,7 @@ func TestPowerlineStyle_RenderLine_EmptyLine(t *testing.T) {
 }
 
 func TestPowerlineStyle_RenderLine_FiltersEmptyComponents(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	line := LineData{
 		Left:      []string{"~/projects", "", "5 commits"},
 		LeftNames: []string{"repo_info", "model_info", "commits"},
@@ -72,7 +72,7 @@ func TestPowerlineStyle_RenderLine_FiltersEmptyComponents(t *testing.T) {
 }
 
 func TestPowerlineStyle_RenderLine_SameCategoryMerges(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	// cost_daily and cost_live are both Cost (peach) -- should merge into one segment
 	line := LineData{
 		Left:      []string{"$0.89", "$2.47"},
@@ -87,7 +87,7 @@ func TestPowerlineStyle_RenderLine_SameCategoryMerges(t *testing.T) {
 }
 
 func TestPowerlineStyle_RenderLine_LeftAndRight(t *testing.T) {
-	s := NewPowerlineStyle(New())
+	s := NewPowerlineStyle(New(nil))
 	line := LineData{
 		Left:       []string{"~/projects"},
 		LeftNames:  []string{"repo_info"},
@@ -105,7 +105,7 @@ func TestPowerlineStyle_RenderLine_LeftAndRight(t *testing.T) {
 }
 
 func TestPowerlineStyle_ImplementsStyle(t *testing.T) {
-	var _ Style = NewPowerlineStyle(New())
+	var _ Style = NewPowerlineStyle(New(nil))
 }
 
 func TestBuildSegments_MergesSameCategory(t *testing.T) {

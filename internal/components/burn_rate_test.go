@@ -10,7 +10,7 @@ import (
 )
 
 func TestBurnRate_Name(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBurnRate(r, icons.New("emoji"))
 
 	if c.Name() != "burn_rate" {
@@ -19,7 +19,7 @@ func TestBurnRate_Name(t *testing.T) {
 }
 
 func TestBurnRate_Render_ZeroDuration(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBurnRate(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -36,7 +36,7 @@ func TestBurnRate_Render_ZeroDuration(t *testing.T) {
 }
 
 func TestBurnRate_Render_DisplaysRate(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBurnRate(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
@@ -56,7 +56,7 @@ func TestBurnRate_Render_DisplaysRate(t *testing.T) {
 }
 
 func TestBurnRate_Render_RoundsCorrectly(t *testing.T) {
-	r := render.New()
+	r := render.New(nil)
 	c := NewBurnRate(r, icons.New("emoji"))
 
 	in := &input.StatusLineInput{
