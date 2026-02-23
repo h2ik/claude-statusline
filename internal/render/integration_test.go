@@ -161,3 +161,96 @@ func TestPowerlinePipeline_EmptyComponentsFiltered(t *testing.T) {
 		t.Fatal("expected non-empty output")
 	}
 }
+
+func TestPowerlinePipeline_LatteTheme(t *testing.T) {
+	rLatte := render.New(&render.ThemeLatte)
+	rLatte.SetStyle(render.NewPowerlineStyle(rLatte))
+
+	rMocha := render.New(&render.ThemeMocha)
+	rMocha.SetStyle(render.NewPowerlineStyle(rMocha))
+
+	registry := component.NewRegistry()
+	registry.Register(&mockComp{name: "repo_info", output: "~/projects"})
+	registry.Register(&mockComp{name: "cost_daily", output: "$0.89"})
+
+	in := &input.StatusLineInput{}
+	leftNames, leftContent := registry.RenderNamedLine(in, []string{"repo_info", "cost_daily"})
+	lines := []render.LineData{
+		{Left: leftContent, LeftNames: leftNames},
+	}
+
+	latteOut := rLatte.RenderOutput(lines, 80)
+	mochaOut := rMocha.RenderOutput(lines, 80)
+
+	if latteOut == "" {
+		t.Fatal("Latte theme produced empty output")
+	}
+	if latteOut == mochaOut {
+		t.Error("Latte and Mocha produced identical output -- theme colors not applied")
+	}
+	latteStripped := render.StripANSI(latteOut)
+	if !strings.Contains(latteStripped, "~/projects") {
+		t.Error("Latte output missing repo_info content")
+	}
+}
+
+func TestDefaultPipeline_LatteTheme(t *testing.T) {
+	rLatte := render.New(&render.ThemeLatte)
+	rMocha := render.New(&render.ThemeMocha)
+
+	latteBlue := rLatte.Blue("hello")
+	mochaBlue := rMocha.Blue("hello")
+
+	if latteBlue == mochaBlue {
+		t.Error("Latte and Mocha Blue() produced identical styled output -- theme not applied")
+	}
+}
+
+func TestPipeline_BackwardCompat_NoThemeProducesMocha(t *testing.T) {
+	rNil := render.New(nil)
+	rMocha := render.New(&render.ThemeMocha)
+
+	nilBlue := rNil.Blue("hello")
+	mochaBlue := rMocha.Blue("hello")
+
+	if nilBlue != mochaBlue {
+		t.Errorf("nil theme Blue() = %q, Mocha Blue() = %q -- should be identical", nilBlue, mochaBlue)
+	}
+}
+
+func TestAllFourThemes_ProduceOutput(t *testing.T) {
+	themes := []render.Theme{
+		render.ThemeMocha,
+		render.ThemeLatte,
+		render.ThemeFrappe,
+		render.ThemeMacchiato,
+	}
+
+	registry := component.NewRegistry()
+	registry.Register(&mockComp{name: "repo_info", output: "~/projects"})
+	registry.Register(&mockComp{name: "time_display", output: "14:32"})
+	in := &input.StatusLineInput{}
+
+	for _, theme := range themes {
+		t.Run(theme.Name, func(t *testing.T) {
+			th := theme
+			r := render.New(&th)
+			r.SetStyle(render.NewPowerlineStyle(r))
+
+			leftNames, leftContent := registry.RenderNamedLine(in, []string{"repo_info"})
+			rightNames, rightContent := registry.RenderNamedLine(in, []string{"time_display"})
+			lines := []render.LineData{
+				{Left: leftContent, LeftNames: leftNames, Right: rightContent, RightNames: rightNames},
+			}
+
+			output := r.RenderOutput(lines, 120)
+			if output == "" {
+				t.Errorf("theme %q produced empty output", theme.Name)
+			}
+			stripped := render.StripANSI(output)
+			if !strings.Contains(stripped, "~/projects") {
+				t.Errorf("theme %q output missing repo_info", theme.Name)
+			}
+		})
+	}
+}
