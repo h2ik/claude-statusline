@@ -17,6 +17,7 @@ type Config struct {
 
 // Layout defines which components appear on each line.
 type Layout struct {
+	Theme     string       `toml:"theme"`
 	Style     string       `toml:"style"`
 	IconStyle string       `toml:"icon_style"`
 	Padding   int          `toml:"padding"`
@@ -89,6 +90,9 @@ func Load(path string) (*Config, error) {
 		if cfg.Layout.Padding == 0 {
 			cfg.Layout.Padding = 5
 		}
+		if cfg.Layout.Theme == "" {
+			cfg.Layout.Theme = "catppuccin-mocha"
+		}
 		return &cfg, nil
 	}
 
@@ -106,6 +110,7 @@ func Load(path string) (*Config, error) {
 	if len(legacy.Layout.Lines) > 0 {
 		// Migrate: all components go to Left, Right stays empty.
 		cfg.Layout.Style = "default"
+		cfg.Layout.Theme = "catppuccin-mocha"
 		cfg.Layout.Lines = make([]LayoutLine, len(legacy.Layout.Lines))
 		for i, line := range legacy.Layout.Lines {
 			cfg.Layout.Lines[i] = LayoutLine{
@@ -128,6 +133,9 @@ func Load(path string) (*Config, error) {
 	if cfg.Layout.Style == "" {
 		cfg.Layout.Style = "default"
 	}
+	if cfg.Layout.Theme == "" {
+		cfg.Layout.Theme = "catppuccin-mocha"
+	}
 	return &cfg, nil
 }
 
@@ -141,6 +149,7 @@ func DefaultConfig() *Config {
 
 	return &Config{
 		Layout: Layout{
+			Theme:     "catppuccin-mocha",
 			Style:     "default",
 			IconStyle: "emoji",
 			Padding:   5,
@@ -177,6 +186,7 @@ func DefaultPowerlineConfig() *Config {
 
 	return &Config{
 		Layout: Layout{
+			Theme:     "catppuccin-mocha",
 			Style:     "powerline",
 			IconStyle: "nerd-font",
 			Padding:   5,

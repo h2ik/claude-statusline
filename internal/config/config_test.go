@@ -374,3 +374,63 @@ func TestDefaultPowerlineConfig_HasLines(t *testing.T) {
 		t.Error("expected Right components")
 	}
 }
+
+func TestLoad_ThemeFieldPopulates(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[layout]
+theme = "catppuccin-frappe"
+style = "powerline"
+
+[[layout.lines]]
+left  = ["repo_info"]
+right = ["time_display"]
+`
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.Layout.Theme != "catppuccin-frappe" {
+		t.Errorf("expected theme 'catppuccin-frappe', got %q", cfg.Layout.Theme)
+	}
+}
+
+func TestLoad_MissingThemeDefaultsToMocha(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[layout]
+style = "default"
+
+[[layout.lines]]
+left = ["repo_info"]
+`
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.Layout.Theme != "catppuccin-mocha" {
+		t.Errorf("expected theme 'catppuccin-mocha' when field missing, got %q", cfg.Layout.Theme)
+	}
+}
+
+func TestDefaultConfig_HasMochaTheme(t *testing.T) {
+	cfg := DefaultConfig()
+	if cfg.Layout.Theme != "catppuccin-mocha" {
+		t.Errorf("DefaultConfig should have theme 'catppuccin-mocha', got %q", cfg.Layout.Theme)
+	}
+}
+
+func TestDefaultPowerlineConfig_HasMochaTheme(t *testing.T) {
+	cfg := DefaultPowerlineConfig()
+	if cfg.Layout.Theme != "catppuccin-mocha" {
+		t.Errorf("DefaultPowerlineConfig should have theme 'catppuccin-mocha', got %q", cfg.Layout.Theme)
+	}
+}
