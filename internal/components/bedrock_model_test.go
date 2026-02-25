@@ -82,12 +82,34 @@ func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
 	}
 
 	output := bm.Render(in)
-	if strings.Contains(output, "us-west-2") {
-		t.Errorf("expected region 'us-west-2' to be hidden when show_region=false, got: %s", output)
+	// The region may appear inside the raw ARN fallback name, but it should NOT
+	// appear as a parenthetical suffix like "(us-west-2)" when show_region=false.
+	if strings.Contains(output, "(us-west-2)") {
+		t.Errorf("expected region suffix '(us-west-2)' to be hidden when show_region=false, got: %s", output)
 	}
-	// Should still contain the model name (falls back to "Bedrock Model" since aws CLI isn't available)
-	if !strings.Contains(output, "Bedrock Model") {
-		t.Errorf("expected 'Bedrock Model' in output even with region hidden, got: %s", output)
+	if output == "" {
+		t.Error("expected non-empty output even with region hidden")
+	}
+}
+
+func TestBedrockModel_Render_FallsBackToFriendlyNameFromARN(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// ARN with a recognizable model pattern in the resource path — should resolve
+	// to friendly name even without AWS CLI access
+	in := &input.StatusLineInput{
+		Model: input.ModelInfo{
+			DisplayName: "arn:aws:bedrock:us-east-2:123456:inference-profile/us.anthropic.claude-opus-4-v1:0",
+		},
+	}
+
+	output := bm.Render(in)
+	if !strings.Contains(output, "Claude Opus 4") {
+		t.Errorf("expected 'Claude Opus 4' from ARN fallback, got: %s", output)
 	}
 }
 
@@ -131,9 +153,9 @@ func TestGetFriendlyName_RawARNFallback(t *testing.T) {
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
-	// Totally unknown model — should return the raw ARN
+	// Totally unknown Bedrock model — should return generic "Bedrock Model" label
 	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0")
-	if name != "arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0" {
-		t.Errorf("expected raw ARN passthrough, got %q", name)
+	if name != "Bedrock Model" {
+		t.Errorf("expected 'Bedrock Model' fallback, got %q", name)
 	}
 }

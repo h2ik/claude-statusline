@@ -74,33 +74,128 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 		return string(cached), region
 	}
 
-	args := []string{"bedrock", "get-inference-profile",
-		"--inference-profile-identifier", arn,
-		"--query", "models[0].modelArn",
-		"--output", "text"}
-
-	if c.settings != nil && c.settings.AWSRegion != "" {
-		args = append(args, "--region", c.settings.AWSRegion)
-	}
-
-	cmd := exec.Command("aws", args...)
-	if c.settings != nil {
-		cmd.Env = append(os.Environ(), c.settings.CommandEnv()...)
-	}
-
-	output, err := cmd.Output()
-	if err != nil {
-		name := "Bedrock Model"
-		_ = c.cache.Set("bedrock:"+arn, []byte(name+"\t"+region), 24*time.Hour)
-		return name, region
-	}
-
-	modelARN := strings.TrimSpace(string(output))
-	friendlyName := c.getFriendlyName(modelARN)
+	// Try resolving via AWS CLI. Use the region from the ARN itself (not settings)
+	// since the inference profile must be queried in its own region.
+	friendlyName := c.resolveViaAWSCLI(arn, region)
 
 	_ = c.cache.Set("bedrock:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
 	return friendlyName, region
+}
+
+// inferenceProfile holds the fields we care about from both get-inference-profile
+// and list-inference-profiles responses.
+type inferenceProfile struct {
+	Name string `json:"inferenceProfileName"`
+	ARN  string `json:"inferenceProfileArn"`
+	Models []struct {
+		ModelARN string `json:"modelArn"`
+	} `json:"models"`
+}
+
+// resolveViaAWSCLI attempts to resolve an inference profile ARN to a friendly
+// model name using the AWS CLI. It tries get-inference-profile first, then
+// falls back to list-inference-profiles if permissions are insufficient.
+func (c *BedrockModel) resolveViaAWSCLI(arn, arnRegion string) string {
+	region := c.awsRegionArg(arnRegion)
+
+	// Try get-inference-profile first (direct lookup)
+	if profile := c.getInferenceProfile(arn, region); profile != nil {
+		if name := c.nameFromProfile(profile); name != "" {
+			return name
+		}
+	}
+
+	// Fall back to list-inference-profiles (works with broader permissions)
+	if profile := c.findInferenceProfile(arn, region); profile != nil {
+		if name := c.nameFromProfile(profile); name != "" {
+			return name
+		}
+	}
+
+	return c.getFriendlyName(arn)
+}
+
+// awsRegionArg returns the region to use for AWS CLI calls.
+func (c *BedrockModel) awsRegionArg(arnRegion string) string {
+	if arnRegion != "" {
+		return arnRegion
+	}
+	if c.settings != nil && c.settings.AWSRegion != "" {
+		return c.settings.AWSRegion
+	}
+	return ""
+}
+
+// runAWS executes an AWS CLI command and returns the raw JSON output.
+func (c *BedrockModel) runAWS(args []string, region string) ([]byte, error) {
+	if region != "" {
+		args = append(args, "--region", region)
+	}
+	cmd := exec.Command("aws", args...)
+	if c.settings != nil {
+		cmd.Env = append(os.Environ(), c.settings.CommandEnv()...)
+	}
+	return cmd.Output()
+}
+
+// getInferenceProfile tries the direct get-inference-profile API call.
+func (c *BedrockModel) getInferenceProfile(arn, region string) *inferenceProfile {
+	output, err := c.runAWS([]string{
+		"bedrock", "get-inference-profile",
+		"--inference-profile-identifier", arn,
+		"--output", "json",
+	}, region)
+	if err != nil {
+		return nil
+	}
+	var profile inferenceProfile
+	if json.Unmarshal(output, &profile) != nil {
+		return nil
+	}
+	return &profile
+}
+
+// findInferenceProfile searches list-inference-profiles for a matching ARN.
+// It checks APPLICATION profiles first (custom), then SYSTEM_DEFINED.
+func (c *BedrockModel) findInferenceProfile(arn, region string) *inferenceProfile {
+	for _, profileType := range []string{"APPLICATION", "SYSTEM_DEFINED"} {
+		output, err := c.runAWS([]string{
+			"bedrock", "list-inference-profiles",
+			"--type-equals", profileType,
+			"--output", "json",
+		}, region)
+		if err != nil {
+			continue
+		}
+		var resp struct {
+			Profiles []inferenceProfile `json:"inferenceProfileSummaries"`
+		}
+		if json.Unmarshal(output, &resp) != nil {
+			continue
+		}
+		for i := range resp.Profiles {
+			if resp.Profiles[i].ARN == arn {
+				return &resp.Profiles[i]
+			}
+		}
+	}
+	return nil
+}
+
+// nameFromProfile extracts a friendly model name from a resolved profile.
+func (c *BedrockModel) nameFromProfile(p *inferenceProfile) string {
+	// Try the underlying model ARN first (most specific)
+	if len(p.Models) > 0 && p.Models[0].ModelARN != "" {
+		if name := c.getFriendlyName(p.Models[0].ModelARN); name != p.Models[0].ModelARN && name != "Bedrock Model" {
+			return name
+		}
+	}
+	// Fall back to the inference profile's own name
+	if p.Name != "" {
+		return p.Name
+	}
+	return ""
 }
 
 // modelEntry represents a single model from the AWS API response.
@@ -161,10 +256,14 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 		}
 	}
 
-	// Static fallback for offline/no-creds scenarios
+	// Static fallback for offline/no-creds scenarios.
+	// Order matters: more specific patterns first to avoid partial matches.
 	fallback := map[string]string{
+		"claude-opus-4-6":   "Claude Opus 4.6",
 		"claude-opus-4":     "Claude Opus 4",
+		"claude-sonnet-4-5": "Claude Sonnet 4.5",
 		"claude-sonnet-4":   "Claude Sonnet 4",
+		"claude-3-7-sonnet": "Claude 3.7 Sonnet",
 		"claude-3-5-sonnet": "Claude 3.5 Sonnet",
 		"claude-3-5-haiku":  "Claude 3.5 Haiku",
 		"claude-3-haiku":    "Claude 3 Haiku",
@@ -175,6 +274,12 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 		if strings.Contains(modelARN, key) {
 			return name
 		}
+	}
+
+	// If nothing matched and the input looks like a Bedrock ARN with an opaque
+	// inference-profile ID, return a generic label instead of the raw ARN.
+	if strings.HasPrefix(modelARN, "arn:aws:bedrock:") {
+		return "Bedrock Model"
 	}
 
 	return modelARN
