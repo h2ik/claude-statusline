@@ -10,6 +10,10 @@ import (
 
 const transcriptCacheTTL = 5 * time.Minute
 
+// cacheVersion is bumped when the cost calculation logic changes, which
+// automatically invalidates stale cached values from older binaries.
+const cacheVersion = "v2"
+
 // TranscriptScanner computes period costs by scanning Claude Code's native
 // JSONL transcript files. Results are cached for 5 minutes.
 type TranscriptScanner struct {
@@ -25,7 +29,7 @@ func NewTranscriptScanner(projectsDir string, c *cache.Cache) *TranscriptScanner
 // CalculatePeriod returns the total USD cost from all transcripts within the
 // given duration. Results are cached per-duration with a 5 minute TTL.
 func (s *TranscriptScanner) CalculatePeriod(duration time.Duration) float64 {
-	cacheKey := fmt.Sprintf("transcript-cost:%s", duration.String())
+	cacheKey := fmt.Sprintf("transcript-cost:%s:%s", cacheVersion, duration.String())
 
 	if data, err := s.cache.Get(cacheKey, transcriptCacheTTL); err == nil {
 		if val, err := strconv.ParseFloat(string(data), 64); err == nil {
@@ -44,7 +48,7 @@ func (s *TranscriptScanner) CalculatePeriod(duration time.Duration) float64 {
 func (s *TranscriptScanner) CalculateToday() float64 {
 	now := time.Now()
 	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	cacheKey := fmt.Sprintf("transcript-cost:today:%s", midnight.Format("2006-01-02"))
+	cacheKey := fmt.Sprintf("transcript-cost:%s:today:%s", cacheVersion, midnight.Format("2006-01-02"))
 
 	if data, err := s.cache.Get(cacheKey, transcriptCacheTTL); err == nil {
 		if val, err := strconv.ParseFloat(string(data), 64); err == nil {
