@@ -11,6 +11,7 @@ import (
 
 // transcriptEntry holds parsed fields from a single JSONL transcript line.
 type transcriptEntry struct {
+	MessageID        string
 	Model            string
 	InputTokens      int
 	OutputTokens     int
@@ -24,6 +25,7 @@ type transcriptEntry struct {
 type rawTranscriptLine struct {
 	Type    string `json:"type"`
 	Message struct {
+		ID    string `json:"id"`
 		Model string `json:"model"`
 		Usage struct {
 			InputTokens              int `json:"input_tokens"`
@@ -53,6 +55,7 @@ func parseTranscriptEntry(line []byte) (transcriptEntry, bool) {
 		return transcriptEntry{}, false
 	}
 	return transcriptEntry{
+		MessageID:        raw.Message.ID,
 		Model:            raw.Message.Model,
 		InputTokens:      raw.Message.Usage.InputTokens,
 		OutputTokens:     raw.Message.Usage.OutputTokens,
@@ -64,6 +67,12 @@ func parseTranscriptEntry(line []byte) (transcriptEntry, bool) {
 
 // scanFile reads a single JSONL file and returns the total USD cost of all
 // assistant entries whose timestamp is after the cutoff.
+//
+// Claude Code transcripts emit multiple assistant entries per API call as the
+// response streams in (each carrying the same message ID). To avoid counting
+// the same turn multiple times, we deduplicate by message ID — keeping only
+// the last entry for each ID, which has the final token counts. Entries
+// without a message ID are counted individually.
 func scanFile(path string, cutoff time.Time) float64 {
 	f, err := os.Open(path)
 	if err != nil {
@@ -71,7 +80,17 @@ func scanFile(path string, cutoff time.Time) float64 {
 	}
 	defer func() { _ = f.Close() }()
 
-	var total float64
+	// Track the last entry per message ID so streaming duplicates collapse.
+	type entryData struct {
+		inputTokens      int
+		outputTokens     int
+		cacheWriteTokens int
+		cacheReadTokens  int
+		model            string
+	}
+	deduped := make(map[string]entryData)
+	var noIDTotal float64
+
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
@@ -84,15 +103,36 @@ func scanFile(path string, cutoff time.Time) float64 {
 		if !ok {
 			continue
 		}
-		if entry.Timestamp.After(cutoff) {
-			total += CalculateEntryCost(
+		if !entry.Timestamp.After(cutoff) {
+			continue
+		}
+		if entry.MessageID == "" {
+			noIDTotal += CalculateEntryCost(
 				entry.InputTokens, entry.OutputTokens,
 				entry.CacheWriteTokens, entry.CacheReadTokens,
 				entry.Model,
 			)
+			continue
+		}
+		// Last write wins — later entries for the same ID have final token counts.
+		deduped[entry.MessageID] = entryData{
+			inputTokens:      entry.InputTokens,
+			outputTokens:     entry.OutputTokens,
+			cacheWriteTokens: entry.CacheWriteTokens,
+			cacheReadTokens:  entry.CacheReadTokens,
+			model:            entry.Model,
 		}
 	}
-	return total
+
+	var total float64
+	for _, e := range deduped {
+		total += CalculateEntryCost(
+			e.inputTokens, e.outputTokens,
+			e.cacheWriteTokens, e.cacheReadTokens,
+			e.model,
+		)
+	}
+	return total + noIDTotal
 }
 
 // ScanTranscripts walks the root directory (typically ~/.claude/projects/)

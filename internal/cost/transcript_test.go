@@ -85,9 +85,9 @@ func TestScanFile_ComputesCost(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.jsonl")
 	lines := []string{
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_001","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
 		`{"type":"user","message":{"role":"user","content":"hello"},"timestamp":"2026-02-15T10:00:01.000Z"}`,
-		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_002","model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
 	}
 	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
 
@@ -100,12 +100,55 @@ func TestScanFile_ComputesCost(t *testing.T) {
 	}
 }
 
+func TestScanFile_DeduplicatesStreamingEntries(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.jsonl")
+	// Simulate streaming: same message ID appears 3 times with increasing output tokens.
+	// Only the last entry (output_tokens=500) should be counted.
+	lines := []string{
+		`{"type":"assistant","message":{"id":"msg_abc","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":2,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_abc","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":250,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.100Z"}`,
+		`{"type":"assistant","message":{"id":"msg_abc","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.200Z"}`,
+	}
+	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+
+	cutoff := time.Date(2026, 2, 15, 0, 0, 0, 0, time.UTC)
+	cost := scanFile(path, cutoff)
+	// Should only count once: (1000*5+500*25)/1M = 0.0175
+	expected := 0.0175
+	if cost < expected-0.0001 || cost > expected+0.0001 {
+		t.Errorf("expected %f (single count), got %f", expected, cost)
+	}
+}
+
+func TestScanFile_DifferentMessageIDsCountSeparately(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.jsonl")
+	// Two different message IDs with streaming entries each
+	lines := []string{
+		`{"type":"assistant","message":{"id":"msg_001","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":2,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_001","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.100Z"}`,
+		`{"type":"assistant","message":{"id":"msg_002","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":2,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:01:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_002","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":300,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:01:00.100Z"}`,
+	}
+	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
+
+	cutoff := time.Date(2026, 2, 15, 0, 0, 0, 0, time.UTC)
+	cost := scanFile(path, cutoff)
+	// msg_001: (1000*5+500*25)/1M = 0.0175
+	// msg_002: (1000*5+300*25)/1M = 0.0125
+	expected := 0.0175 + 0.0125
+	if cost < expected-0.0001 || cost > expected+0.0001 {
+		t.Errorf("expected %f, got %f", expected, cost)
+	}
+}
+
 func TestScanFile_FiltersOldEntries(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.jsonl")
 	lines := []string{
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-01-01T10:00:00.000Z"}`,
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_old","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-01-01T10:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_new","model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`,
 	}
 	_ = os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0644)
 
@@ -139,7 +182,7 @@ func TestScanFile_HandlesMalformedLines(t *testing.T) {
 	path := filepath.Join(dir, "malformed.jsonl")
 	lines := []string{
 		`{not valid json`,
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
+		`{"type":"assistant","message":{"id":"msg_ok","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`,
 		``,
 		`another bad line`,
 	}
@@ -159,13 +202,13 @@ func TestScanTranscripts_WalksDirectoryTree(t *testing.T) {
 	_ = os.MkdirAll(projectDir, 0755)
 
 	_ = os.WriteFile(filepath.Join(projectDir, "abc-123.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		`{"type":"assistant","message":{"id":"msg_main","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
 	subagentDir := filepath.Join(projectDir, "abc-123", "subagents")
 	_ = os.MkdirAll(subagentDir, 0755)
 	_ = os.WriteFile(filepath.Join(subagentDir, "agent-xyz.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`+"\n",
+		`{"type":"assistant","message":{"id":"msg_sub","model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`+"\n",
 	), 0644)
 
 	total := ScanTranscripts(root, 30*24*time.Hour)
@@ -181,7 +224,7 @@ func TestScanTranscripts_SkipsNonJSONL(t *testing.T) {
 	_ = os.MkdirAll(projectDir, 0755)
 	_ = os.WriteFile(filepath.Join(projectDir, "notes.txt"), []byte("not jsonl"), 0644)
 	_ = os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		`{"type":"assistant","message":{"id":"msg_sess","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
 	total := ScanTranscripts(root, 30*24*time.Hour)
@@ -212,12 +255,12 @@ func TestScanTranscripts_SkipsToolResultsDir(t *testing.T) {
 	toolDir := filepath.Join(projectDir, "abc-123", "tool-results")
 	_ = os.MkdirAll(toolDir, 0755)
 	_ = os.WriteFile(filepath.Join(toolDir, "result.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":99999,"output_tokens":99999,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		`{"type":"assistant","message":{"id":"msg_tool","model":"claude-opus-4-5-20251101","usage":{"input_tokens":99999,"output_tokens":99999,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
 	_ = os.MkdirAll(projectDir, 0755)
 	_ = os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		`{"type":"assistant","message":{"id":"msg_real","model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
 	), 0644)
 
 	total := ScanTranscripts(root, 30*24*time.Hour)
