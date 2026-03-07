@@ -22,7 +22,7 @@ import (
 	"golang.org/x/term"
 )
 
-//nolint:unused // set via ldflags at build time by goreleaser
+// Set via ldflags at build time.
 var (
 	version = "dev"
 	commit  = "none"
@@ -30,6 +30,11 @@ var (
 )
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Printf("claude-statusline %s (commit: %s, built: %s)\n", version, commit, date)
+		os.Exit(0)
+	}
+
 	// Read JSON from stdin
 	in, err := input.ParseInput(os.Stdin)
 	if err != nil {
