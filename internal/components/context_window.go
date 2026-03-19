@@ -55,10 +55,7 @@ func (c *ContextWindow) Render(in *input.StatusLineInput) string {
 	showTokens := c.config.GetBool("context_window", "show_tokens", true)
 	if showTokens && in.ContextWindow.ContextWindowSize > 0 {
 		used := float64(pct) / 100.0 * float64(in.ContextWindow.ContextWindowSize)
-		tokens = fmt.Sprintf(" (%.0fK/%dK)",
-			used/1000.0,
-			in.ContextWindow.ContextWindowSize/1000,
-		)
+		tokens = fmt.Sprintf(" (%s/%s)", formatTokens(used), formatTokens(float64(in.ContextWindow.ContextWindowSize)))
 	}
 
 	return fmt.Sprintf("%s %s%s%s",
@@ -67,4 +64,17 @@ func (c *ContextWindow) Render(in *input.StatusLineInput) string {
 		colorFunc(tokens),
 		warning,
 	)
+}
+
+// formatTokens renders a token count as a human-friendly string,
+// using M for millions and K for thousands.
+func formatTokens(tokens float64) string {
+	if tokens >= 1_000_000 {
+		v := tokens / 1_000_000
+		if v == float64(int(v)) {
+			return fmt.Sprintf("%dM", int(v))
+		}
+		return fmt.Sprintf("%.1fM", v)
+	}
+	return fmt.Sprintf("%.0fK", tokens/1000)
 }

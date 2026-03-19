@@ -170,6 +170,44 @@ func TestContextWindow_Render_HidesTokensWhenConfigured(t *testing.T) {
 	}
 }
 
+func TestContextWindow_Render_WithMillionTokens(t *testing.T) {
+	r := render.New(nil)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
+
+	in := &input.StatusLineInput{
+		ContextWindow: input.ContextWindow{
+			UsedPercentage:    30,
+			ContextWindowSize: 1000000,
+		},
+	}
+
+	output := c.Render(in)
+	// 30% of 1000000 = 300000 = 300K
+	if !strings.Contains(output, "300K/1M") {
+		t.Errorf("expected '300K/1M' token count in output, got: %s", output)
+	}
+}
+
+func TestContextWindow_Render_WithFractionalMillionTokens(t *testing.T) {
+	r := render.New(nil)
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+	c := NewContextWindow(r, cfg, icons.New("emoji"))
+
+	in := &input.StatusLineInput{
+		ContextWindow: input.ContextWindow{
+			UsedPercentage:    50,
+			ContextWindowSize: 1500000,
+		},
+	}
+
+	output := c.Render(in)
+	// 50% of 1500000 = 750000 = 750K, total = 1.5M
+	if !strings.Contains(output, "750K/1.5M") {
+		t.Errorf("expected '750K/1.5M' token count in output, got: %s", output)
+	}
+}
+
 func TestContextWindow_Render_ShowsTokensByDefault(t *testing.T) {
 	r := render.New(nil)
 	// Empty config - no explicit show_tokens setting, should default to true
