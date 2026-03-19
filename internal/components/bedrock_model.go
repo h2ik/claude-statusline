@@ -167,19 +167,27 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 		}
 	}
 
-	// Static fallback for offline/no-creds scenarios
-	fallback := map[string]string{
-		"claude-opus-4":     "Claude Opus 4",
-		"claude-sonnet-4":   "Claude Sonnet 4",
-		"claude-3-5-sonnet": "Claude 3.5 Sonnet",
-		"claude-3-5-haiku":  "Claude 3.5 Haiku",
-		"claude-3-haiku":    "Claude 3 Haiku",
-		"claude-3-opus":     "Claude 3 Opus",
+	// Static fallback for offline/no-creds scenarios.
+	// Ordered most-specific first so "claude-opus-4-6" matches before "claude-opus-4".
+	fallback := []struct {
+		key  string
+		name string
+	}{
+		{"claude-opus-4-6", "Claude Opus 4.6"},
+		{"claude-opus-4-5", "Claude Opus 4.5"},
+		{"claude-opus-4", "Claude Opus 4"},
+		{"claude-sonnet-4-6", "Claude Sonnet 4.6"},
+		{"claude-sonnet-4-5", "Claude Sonnet 4.5"},
+		{"claude-sonnet-4", "Claude Sonnet 4"},
+		{"claude-3-5-sonnet", "Claude 3.5 Sonnet"},
+		{"claude-3-5-haiku", "Claude 3.5 Haiku"},
+		{"claude-3-haiku", "Claude 3 Haiku"},
+		{"claude-3-opus", "Claude 3 Opus"},
 	}
 
-	for key, name := range fallback {
-		if strings.Contains(modelARN, key) {
-			return name
+	for _, f := range fallback {
+		if strings.Contains(modelARN, f.key) {
+			return f.name
 		}
 	}
 
