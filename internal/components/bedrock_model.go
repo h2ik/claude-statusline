@@ -47,7 +47,13 @@ func (c *BedrockModel) Render(in *input.StatusLineInput) string {
 		return ""
 	}
 
-	name, region := c.resolveBedrockARN(modelName)
+	// Strip trailing context window suffix (e.g. "[1m]") from the ARN
+	arn := modelName
+	if idx := strings.Index(arn, "["); idx != -1 {
+		arn = arn[:idx]
+	}
+
+	name, region := c.resolveBedrockARN(arn)
 	icon := c.icons.Get(icons.Brain)
 	if region != "" && c.config.GetBool("bedrock_model", "show_region", true) {
 		return fmt.Sprintf("%s %s %s", icon, c.renderer.Text(name), c.renderer.Dimmed("("+region+")"))

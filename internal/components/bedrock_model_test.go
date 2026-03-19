@@ -91,6 +91,30 @@ func TestBedrockModel_Render_HidesRegionWhenConfigured(t *testing.T) {
 	}
 }
 
+func TestBedrockModel_Render_StripsContextWindowSuffix(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	// Pre-seed the cache for the ARN *without* the suffix
+	arn := "arn:aws:bedrock:us-west-2:123456789012:application-inference-profile/abc123"
+	_ = c.Set("bedrock:"+arn, []byte("Claude Opus 4\tus-west-2"), 24*time.Hour)
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// Pass the ARN with a context window suffix
+	in := &input.StatusLineInput{
+		Model: input.ModelInfo{
+			DisplayName: arn + "[1m]",
+		},
+	}
+
+	output := bm.Render(in)
+	if !strings.Contains(output, "Claude Opus 4") {
+		t.Errorf("expected 'Claude Opus 4' after stripping suffix, got: %s", output)
+	}
+}
+
 func TestGetFriendlyName_FromCatalog(t *testing.T) {
 	r := render.New(nil)
 	cacheDir := t.TempDir()
