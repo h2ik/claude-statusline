@@ -1,6 +1,7 @@
 package cost
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,12 +10,18 @@ import (
 	"github.com/h2ik/claude-statusline/internal/cache"
 )
 
+// recentTimestamp returns a timestamp string from 1 hour ago, ensuring test
+// entries always fall within any reasonable scan window.
+func recentTimestamp() string {
+	return time.Now().Add(-1 * time.Hour).UTC().Format(time.RFC3339Nano)
+}
+
 func TestTranscriptScanner_ComputesCost(t *testing.T) {
 	projectsDir := t.TempDir()
 	projDir := filepath.Join(projectsDir, "-Users-test")
 	_ = os.MkdirAll(projDir, 0755)
 	_ = os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTimestamp())+"\n",
 	), 0644)
 
 	c := cache.New(t.TempDir())
@@ -32,7 +39,7 @@ func TestTranscriptScanner_UsesCacheOnSecondCall(t *testing.T) {
 	projDir := filepath.Join(projectsDir, "-Users-test")
 	_ = os.MkdirAll(projDir, 0755)
 	_ = os.WriteFile(filepath.Join(projDir, "s1.jsonl"), []byte(
-		`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTimestamp())+"\n",
 	), 0644)
 
 	c := cache.New(t.TempDir())

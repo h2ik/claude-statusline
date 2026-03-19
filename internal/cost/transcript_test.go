@@ -1,12 +1,19 @@
 package cost
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+// recentTS returns a timestamp string offset from now, ensuring test entries
+// fall within scan windows regardless of when the test runs.
+func recentTS(offset time.Duration) string {
+	return time.Now().Add(offset).UTC().Format(time.RFC3339Nano)
+}
 
 func TestParseTranscriptEntry_ValidAssistant(t *testing.T) {
 	line := `{"type":"assistant","message":{"model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":200,"cache_read_input_tokens":1000}},"timestamp":"2026-02-15T14:48:28.920Z"}`
@@ -202,13 +209,13 @@ func TestScanTranscripts_WalksDirectoryTree(t *testing.T) {
 	_ = os.MkdirAll(projectDir, 0755)
 
 	_ = os.WriteFile(filepath.Join(projectDir, "abc-123.jsonl"), []byte(
-		`{"type":"assistant","message":{"id":"msg_main","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"id":"msg_main","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTS(-1*time.Hour))+"\n",
 	), 0644)
 
 	subagentDir := filepath.Join(projectDir, "abc-123", "subagents")
 	_ = os.MkdirAll(subagentDir, 0755)
 	_ = os.WriteFile(filepath.Join(subagentDir, "agent-xyz.jsonl"), []byte(
-		`{"type":"assistant","message":{"id":"msg_sub","model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T11:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"id":"msg_sub","model":"claude-haiku-4-5-20251001","usage":{"input_tokens":2000,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTS(-30*time.Minute))+"\n",
 	), 0644)
 
 	total := ScanTranscripts(root, 30*24*time.Hour)
@@ -224,7 +231,7 @@ func TestScanTranscripts_SkipsNonJSONL(t *testing.T) {
 	_ = os.MkdirAll(projectDir, 0755)
 	_ = os.WriteFile(filepath.Join(projectDir, "notes.txt"), []byte("not jsonl"), 0644)
 	_ = os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
-		`{"type":"assistant","message":{"id":"msg_sess","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"id":"msg_sess","model":"claude-opus-4-5-20251101","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTS(-1*time.Hour))+"\n",
 	), 0644)
 
 	total := ScanTranscripts(root, 30*24*time.Hour)
@@ -255,12 +262,12 @@ func TestScanTranscripts_SkipsToolResultsDir(t *testing.T) {
 	toolDir := filepath.Join(projectDir, "abc-123", "tool-results")
 	_ = os.MkdirAll(toolDir, 0755)
 	_ = os.WriteFile(filepath.Join(toolDir, "result.jsonl"), []byte(
-		`{"type":"assistant","message":{"id":"msg_tool","model":"claude-opus-4-5-20251101","usage":{"input_tokens":99999,"output_tokens":99999,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"id":"msg_tool","model":"claude-opus-4-5-20251101","usage":{"input_tokens":99999,"output_tokens":99999,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTS(-1*time.Hour))+"\n",
 	), 0644)
 
 	_ = os.MkdirAll(projectDir, 0755)
 	_ = os.WriteFile(filepath.Join(projectDir, "session.jsonl"), []byte(
-		`{"type":"assistant","message":{"id":"msg_real","model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"2026-02-15T10:00:00.000Z"}`+"\n",
+		fmt.Sprintf(`{"type":"assistant","message":{"id":"msg_real","model":"claude-opus-4-5-20251101","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"timestamp":"%s"}`, recentTS(-1*time.Hour))+"\n",
 	), 0644)
 
 	total := ScanTranscripts(root, 30*24*time.Hour)
