@@ -54,11 +54,11 @@ func (c *BedrockModel) Render(in *input.StatusLineInput) string {
 	}
 
 	name, region := c.resolveBedrockARN(arn)
-	icon := c.icons.Get(icons.Brain)
+	icon := c.getIcon(name)
 	if region != "" && c.config.GetBool("bedrock_model", "show_region", true) {
-		return fmt.Sprintf("%s %s %s", icon, c.renderer.Text(name), c.renderer.Dimmed("("+region+")"))
+		return fmt.Sprintf("%s %s %s", icon, c.renderer.Teal(name), c.renderer.Dimmed("("+region+")"))
 	}
-	return fmt.Sprintf("%s %s", icon, c.renderer.Text(name))
+	return fmt.Sprintf("%s %s", icon, c.renderer.Teal(name))
 }
 
 // resolveBedrockARN resolves a Bedrock inference profile ARN to a friendly name
@@ -96,9 +96,9 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		name := "Bedrock Model"
-		_ = c.cache.Set("bedrock:"+arn, []byte(name+"\t"+region), 24*time.Hour)
-		return name, region
+		// Don't cache failures — transient errors (expired creds, network
+		// blips) would poison the cache until TTL expires.
+		return "Bedrock Model", region
 	}
 
 	modelARN := strings.TrimSpace(string(output))
@@ -107,6 +107,22 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	_ = c.cache.Set("bedrock:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
 	return friendlyName, region
+}
+
+// getIcon returns an icon based on the resolved model family name.
+func (c *BedrockModel) getIcon(name string) string {
+	lower := strings.ToLower(name)
+
+	switch {
+	case strings.Contains(lower, "opus"):
+		return c.icons.Get(icons.Brain)
+	case strings.Contains(lower, "haiku"):
+		return c.icons.Get(icons.Lightning)
+	case strings.Contains(lower, "sonnet"):
+		return c.icons.Get(icons.Music)
+	default:
+		return c.icons.Get(icons.Robot)
+	}
 }
 
 // modelEntry represents a single model from the AWS API response.
