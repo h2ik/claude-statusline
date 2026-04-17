@@ -98,7 +98,7 @@ func TestBedrockModel_Render_StripsContextWindowSuffix(t *testing.T) {
 
 	// Pre-seed the cache for the ARN *without* the suffix
 	arn := "arn:aws:bedrock:us-west-2:123456789012:application-inference-profile/abc123"
-	_ = c.Set("bedrock:"+arn, []byte("Claude Opus 4\tus-west-2"), 24*time.Hour)
+	_ = c.Set("bedrock:v2:"+arn, []byte("Claude Opus 4\tus-west-2"), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
@@ -123,7 +123,7 @@ func TestGetFriendlyName_FromCatalog(t *testing.T) {
 
 	// Pre-seed the cache with a model catalog
 	catalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"},{"id":"anthropic.claude-sonnet-4-20250514-v1:0","name":"Claude Sonnet 4"}]`
-	_ = c.Set("bedrock:model-catalog", []byte(catalog), 24*time.Hour)
+	_ = c.Set("bedrock:v2:model-catalog", []byte(catalog), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
@@ -159,5 +159,96 @@ func TestGetFriendlyName_RawARNFallback(t *testing.T) {
 	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0")
 	if name != "arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-99-turbo-v1:0" {
 		t.Errorf("expected raw ARN passthrough, got %q", name)
+	}
+}
+
+func TestResolveBedrockARN_FallsBackToProfileCatalog(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	// Pre-seed the inference profile catalog cache.
+	// This simulates what loadProfileCatalog() would cache from
+	// "aws bedrock list-inference-profiles".
+	catalog := `[{"arn":"arn:aws:bedrock:us-east-2:123456:application-inference-profile/opaque123","modelArn":"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-opus-4-6-v1"}]`
+	_ = c.Set("bedrock:v2:profile-catalog", []byte(catalog), 24*time.Hour)
+
+	// Also seed the model catalog so getFriendlyName can resolve the model ARN.
+	modelCatalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"}]`
+	_ = c.Set("bedrock:v2:model-catalog", []byte(modelCatalog), 24*time.Hour)
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// The AWS CLI call for get-inference-profile will fail (no real AWS in tests),
+	// but the profile catalog should resolve the opaque ARN to the model ARN,
+	// and then getFriendlyName resolves that to "Claude Opus 4.6".
+	name, region := bm.resolveBedrockARN("arn:aws:bedrock:us-east-2:123456:application-inference-profile/opaque123")
+
+	if name != "Claude Opus 4.6" {
+		t.Errorf("expected 'Claude Opus 4.6' via profile catalog fallback, got %q", name)
+	}
+	if region != "us-east-2" {
+		t.Errorf("expected region 'us-east-2', got %q", region)
+	}
+}
+
+func TestResolveBedrockARN_FallsBackToFriendlyNameOnOriginalARN(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// An inference-profile ARN (not application-) that contains a recognizable model slug.
+	// AWS CLI will fail in tests, but the ARN itself contains "claude-opus-4-6"
+	// which should match the static fallback in getFriendlyName.
+	name, region := bm.resolveBedrockARN("arn:aws:bedrock:us-west-2:123456:inference-profile/us.anthropic.claude-opus-4-6-v1")
+
+	if name != "Claude Opus 4.6" {
+		t.Errorf("expected 'Claude Opus 4.6' via static fallback on original ARN, got %q", name)
+	}
+	if region != "us-west-2" {
+		t.Errorf("expected region 'us-west-2', got %q", region)
+	}
+}
+
+func TestResolveBedrockARN_BedrockModelOnlyWhenNothingMatches(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// Completely opaque ARN, no profile catalog, no model catalog, no static match.
+	// This is the only case that should return "Bedrock Model".
+	name, region := bm.resolveBedrockARN("arn:aws:bedrock:eu-west-1:999999:application-inference-profile/totallyopaque")
+
+	if name != "Bedrock Model" {
+		t.Errorf("expected 'Bedrock Model' as ultimate fallback, got %q", name)
+	}
+	if region != "eu-west-1" {
+		t.Errorf("expected region 'eu-west-1', got %q", region)
+	}
+}
+
+func TestLoadProfileCatalog_FromCache(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	catalog := `[{"arn":"arn:aws:bedrock:us-east-2:123456:application-inference-profile/abc","modelArn":"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-v1"}]`
+	_ = c.Set("bedrock:v2:profile-catalog", []byte(catalog), 24*time.Hour)
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+	profiles := bm.loadProfileCatalog()
+
+	if len(profiles) != 1 {
+		t.Fatalf("expected 1 profile entry, got %d", len(profiles))
+	}
+	if profiles[0].ARN != "arn:aws:bedrock:us-east-2:123456:application-inference-profile/abc" {
+		t.Errorf("unexpected ARN: %q", profiles[0].ARN)
+	}
+	if profiles[0].ModelARN != "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-v1" {
+		t.Errorf("unexpected ModelARN: %q", profiles[0].ModelARN)
 	}
 }
