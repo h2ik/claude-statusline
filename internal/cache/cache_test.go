@@ -76,6 +76,40 @@ func TestCache_Prune_MissingDir(t *testing.T) {
 	}
 }
 
+func TestCache_Clear_RemovesAllFiles(t *testing.T) {
+	dir := t.TempDir()
+	c := New(dir)
+
+	_ = c.Set("key-1", []byte("a"), 0)
+	_ = c.Set("key-2", []byte("b"), 0)
+	_ = c.Set("key-3", []byte("c"), 0)
+
+	removed, err := c.Clear()
+	if err != nil {
+		t.Fatalf("Clear failed: %v", err)
+	}
+	if removed != 3 {
+		t.Errorf("expected 3 files removed, got %d", removed)
+	}
+
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 0 {
+		t.Errorf("expected empty cache dir, got %d entries", len(entries))
+	}
+}
+
+func TestCache_Clear_MissingDir(t *testing.T) {
+	c := New("/nonexistent/cache/dir")
+
+	removed, err := c.Clear()
+	if err != nil {
+		t.Fatalf("expected no error for missing dir, got: %v", err)
+	}
+	if removed != 0 {
+		t.Errorf("expected 0 files removed, got %d", removed)
+	}
+}
+
 func TestCache_GetExpired(t *testing.T) {
 	dir := t.TempDir()
 	c := New(dir)

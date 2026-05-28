@@ -98,7 +98,7 @@ func TestBedrockModel_Render_StripsContextWindowSuffix(t *testing.T) {
 
 	// Pre-seed the cache for the ARN *without* the suffix
 	arn := "arn:aws:bedrock:us-west-2:123456789012:application-inference-profile/abc123"
-	_ = c.Set("bedrock:v2:"+arn, []byte("Claude Opus 4\tus-west-2"), 24*time.Hour)
+	_ = c.Set("bedrock:v3:"+arn, []byte("Claude Opus 4\tus-west-2"), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
@@ -123,7 +123,7 @@ func TestGetFriendlyName_FromCatalog(t *testing.T) {
 
 	// Pre-seed the cache with a model catalog
 	catalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"},{"id":"anthropic.claude-sonnet-4-20250514-v1:0","name":"Claude Sonnet 4"}]`
-	_ = c.Set("bedrock:v2:model-catalog", []byte(catalog), 24*time.Hour)
+	_ = c.Set("bedrock:v3:model-catalog", []byte(catalog), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
@@ -171,11 +171,11 @@ func TestResolveBedrockARN_FallsBackToProfileCatalog(t *testing.T) {
 	// This simulates what loadProfileCatalog() would cache from
 	// "aws bedrock list-inference-profiles".
 	catalog := `[{"arn":"arn:aws:bedrock:us-east-2:123456:application-inference-profile/opaque123","modelArn":"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-opus-4-6-v1"}]`
-	_ = c.Set("bedrock:v2:profile-catalog", []byte(catalog), 24*time.Hour)
+	_ = c.Set("bedrock:v3:profile-catalog", []byte(catalog), 24*time.Hour)
 
 	// Also seed the model catalog so getFriendlyName can resolve the model ARN.
 	modelCatalog := `[{"id":"anthropic.claude-opus-4-6-v1","name":"Claude Opus 4.6"}]`
-	_ = c.Set("bedrock:v2:model-catalog", []byte(modelCatalog), 24*time.Hour)
+	_ = c.Set("bedrock:v3:model-catalog", []byte(modelCatalog), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 
@@ -237,7 +237,7 @@ func TestLoadProfileCatalog_FromCache(t *testing.T) {
 	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
 
 	catalog := `[{"arn":"arn:aws:bedrock:us-east-2:123456:application-inference-profile/abc","modelArn":"arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-v1"}]`
-	_ = c.Set("bedrock:v2:profile-catalog", []byte(catalog), 24*time.Hour)
+	_ = c.Set("bedrock:v3:profile-catalog", []byte(catalog), 24*time.Hour)
 
 	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
 	profiles := bm.loadProfileCatalog()

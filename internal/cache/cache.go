@@ -77,6 +77,31 @@ func (c *Cache) Prune(maxAge time.Duration) error {
 	return nil
 }
 
+// Clear removes every file in the cache directory and returns the number
+// of files removed. A missing cache directory is treated as already empty
+// (count 0, no error).
+func (c *Cache) Clear() (int, error) {
+	entries, err := os.ReadDir(c.dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("read cache dir: %w", err)
+	}
+
+	removed := 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if err := os.Remove(filepath.Join(c.dir, entry.Name())); err != nil {
+			return removed, fmt.Errorf("remove %s: %w", entry.Name(), err)
+		}
+		removed++
+	}
+	return removed, nil
+}
+
 func (c *Cache) path(key string) string {
 	hash := sha256.Sum256([]byte(key))
 	filename := hex.EncodeToString(hash[:])

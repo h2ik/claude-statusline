@@ -71,7 +71,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 		region = parts[3]
 	}
 
-	cached, err := c.cache.Get("bedrock:v2:"+arn, 24*time.Hour)
+	cached, err := c.cache.Get("bedrock:v3:"+arn, 24*time.Hour)
 	if err == nil {
 		fields := strings.SplitN(string(cached), "\t", 2)
 		if len(fields) == 2 {
@@ -103,7 +103,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 			for _, p := range profiles {
 				if p.ARN == arn {
 					friendlyName := c.getFriendlyName(p.ModelARN)
-					_ = c.cache.Set("bedrock:v2:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
+					_ = c.cache.Set("bedrock:v3:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 					return friendlyName, region
 				}
 			}
@@ -113,7 +113,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 		// fallback (works for inference-profile ARNs that contain model
 		// slugs like "claude-opus-4-6" in their ID).
 		if name := c.getFriendlyName(arn); name != arn {
-			_ = c.cache.Set("bedrock:v2:"+arn, []byte(name+"\t"+region), 24*time.Hour)
+			_ = c.cache.Set("bedrock:v3:"+arn, []byte(name+"\t"+region), 24*time.Hour)
 			return name, region
 		}
 
@@ -123,7 +123,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	modelARN := strings.TrimSpace(string(output))
 	friendlyName := c.getFriendlyName(modelARN)
 
-	_ = c.cache.Set("bedrock:v2:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
+	_ = c.cache.Set("bedrock:v3:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
 	return friendlyName, region
 }
@@ -154,7 +154,7 @@ type profileEntry struct {
 // it from the AWS API. Maps application-inference-profile ARNs to their
 // underlying foundation-model ARNs.
 func (c *BedrockModel) loadProfileCatalog() []profileEntry {
-	cached, err := c.cache.Get("bedrock:v2:profile-catalog", 24*time.Hour)
+	cached, err := c.cache.Get("bedrock:v3:profile-catalog", 24*time.Hour)
 	if err == nil {
 		var profiles []profileEntry
 		if json.Unmarshal(cached, &profiles) == nil {
@@ -186,7 +186,7 @@ func (c *BedrockModel) loadProfileCatalog() []profileEntry {
 		return nil
 	}
 
-	_ = c.cache.Set("bedrock:v2:profile-catalog", output, 24*time.Hour)
+	_ = c.cache.Set("bedrock:v3:profile-catalog", output, 24*time.Hour)
 	return profiles
 }
 
@@ -199,7 +199,7 @@ type modelEntry struct {
 // loadModelCatalog returns the cached model catalog, or fetches it from
 // the AWS API. Returns nil if the catalog is unavailable.
 func (c *BedrockModel) loadModelCatalog() []modelEntry {
-	cached, err := c.cache.Get("bedrock:v2:model-catalog", 24*time.Hour)
+	cached, err := c.cache.Get("bedrock:v3:model-catalog", 24*time.Hour)
 	if err == nil {
 		var models []modelEntry
 		if json.Unmarshal(cached, &models) == nil {
@@ -231,7 +231,7 @@ func (c *BedrockModel) loadModelCatalog() []modelEntry {
 		return nil
 	}
 
-	_ = c.cache.Set("bedrock:v2:model-catalog", output, 24*time.Hour)
+	_ = c.cache.Set("bedrock:v3:model-catalog", output, 24*time.Hour)
 	return models
 }
 

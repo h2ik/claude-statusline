@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -32,6 +33,11 @@ var (
 func main() {
 	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
 		fmt.Printf("claude-statusline %s (commit: %s, built: %s)\n", version, commit, date)
+		os.Exit(0)
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "--bust-cache" {
+		bustCache()
 		os.Exit(0)
 	}
 
@@ -136,6 +142,39 @@ func main() {
 
 	output := r.RenderOutput(lineData, termWidth)
 	_, _ = fmt.Fprint(os.Stdout, output)
+}
+
+// bustCache prompts the user to confirm, then removes all cached data.
+// Run manually from a terminal (not during normal stdin-driven rendering).
+func bustCache() {
+	homeDir, _ := os.UserHomeDir()
+	cacheDir := filepath.Join(homeDir, ".cache", "claude-statusline")
+	c := cache.New(cacheDir)
+
+	fmt.Printf("This will delete all cached data in:\n  %s\n\n", cacheDir)
+	fmt.Println("Cached AWS model resolutions and version checks will be re-fetched on the next render.")
+	fmt.Print("Are you sure? (y/N): ")
+
+	reader := bufio.NewReader(os.Stdin)
+	answer, _ := reader.ReadString('\n')
+	answer = strings.ToLower(strings.TrimSpace(answer))
+
+	if answer != "y" && answer != "yes" {
+		fmt.Println("Aborted.")
+		return
+	}
+
+	removed, err := c.Clear()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to clear cache: %v\n", err)
+		os.Exit(1)
+	}
+
+	if removed == 0 {
+		fmt.Println("Cache is already empty.")
+		return
+	}
+	fmt.Printf("Removed %d cache file(s).\n", removed)
 }
 
 // detectTerminalWidth tries multiple strategies to determine the terminal width.
