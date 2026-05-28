@@ -11,6 +11,7 @@ type Pricing struct {
 var pricingTable = map[string]Pricing{
 	"claude-opus-4-5-20251101":   {5.0, 25.0, 6.25, 0.50},
 	"claude-opus-4-6":            {5.0, 25.0, 6.25, 0.50},
+	"claude-opus-4-8":            {5.0, 25.0, 6.25, 0.50},
 	"claude-sonnet-4-5-20251101": {3.0, 15.0, 3.75, 0.30},
 	"claude-sonnet-4-5-20250929": {3.0, 15.0, 3.75, 0.30},
 	"claude-sonnet-4-20250514":   {3.0, 15.0, 3.75, 0.30},
