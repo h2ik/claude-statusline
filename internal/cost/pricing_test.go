@@ -12,6 +12,9 @@ func TestModelPrice_KnownModels(t *testing.T) {
 		wantCacheW float64
 		wantCacheR float64
 	}{
+		{"claude-fable-5", 10.0, 50.0, 12.5, 1.0},
+		{"claude-mythos-5", 10.0, 50.0, 12.5, 1.0},
+		{"claude-mythos-preview", 10.0, 50.0, 12.5, 1.0},
 		{"claude-opus-4-5-20251101", 5.0, 25.0, 6.25, 0.50},
 		{"claude-opus-4-6", 5.0, 25.0, 6.25, 0.50},
 		{"claude-sonnet-4-5-20251101", 3.0, 15.0, 3.75, 0.30},
@@ -55,6 +58,15 @@ func TestModelPrice_PrefixMatching(t *testing.T) {
 	p := ModelPrice("claude-opus-4-7-20260301")
 	if p.InputPerMillion != 5.0 {
 		t.Errorf("expected Opus prefix match input rate 5.0, got %v", p.InputPerMillion)
+	}
+}
+
+func TestModelPrice_FableDoesNotFallThroughToDefault(t *testing.T) {
+	// A dated Fable variant must match the "claude-fable" prefix, not silently
+	// fall through to the Sonnet-tier default ($3/$15) — Fable is $10/$50.
+	p := ModelPrice("claude-fable-5-20260901")
+	if p.InputPerMillion != 10.0 || p.OutputPerMillion != 50.0 {
+		t.Errorf("expected Fable prefix match 10.0/50.0, got %v/%v", p.InputPerMillion, p.OutputPerMillion)
 	}
 }
 

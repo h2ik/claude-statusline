@@ -133,6 +133,8 @@ func (c *BedrockModel) getIcon(name string) string {
 	lower := strings.ToLower(name)
 
 	switch {
+	case strings.Contains(lower, "fable"), strings.Contains(lower, "mythos"):
+		return c.icons.Get(icons.Sparkles)
 	case strings.Contains(lower, "opus"):
 		return c.icons.Get(icons.Brain)
 	case strings.Contains(lower, "haiku"):
@@ -254,6 +256,9 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 		key  string
 		name string
 	}{
+		{"claude-fable-5", "Claude Fable 5"},
+		{"claude-mythos-preview", "Claude Mythos Preview"},
+		{"claude-mythos-5", "Claude Mythos 5"},
 		{"claude-opus-4-8", "Claude Opus 4.8"},
 		{"claude-opus-4-7", "Claude Opus 4.7"},
 		{"claude-opus-4-6", "Claude Opus 4.6"},

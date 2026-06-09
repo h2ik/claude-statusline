@@ -9,6 +9,9 @@ type Pricing struct {
 }
 
 var pricingTable = map[string]Pricing{
+	"claude-fable-5":             {10.0, 50.0, 12.5, 1.0},
+	"claude-mythos-5":            {10.0, 50.0, 12.5, 1.0},
+	"claude-mythos-preview":      {10.0, 50.0, 12.5, 1.0},
 	"claude-opus-4-5-20251101":   {5.0, 25.0, 6.25, 0.50},
 	"claude-opus-4-6":            {5.0, 25.0, 6.25, 0.50},
 	"claude-opus-4-8":            {5.0, 25.0, 6.25, 0.50},
@@ -25,6 +28,8 @@ var prefixPricing = []struct {
 	prefix  string
 	pricing Pricing
 }{
+	{"claude-fable", Pricing{10.0, 50.0, 12.5, 1.0}},
+	{"claude-mythos", Pricing{10.0, 50.0, 12.5, 1.0}},
 	{"claude-opus", Pricing{5.0, 25.0, 6.25, 0.50}},
 	{"claude-sonnet", Pricing{3.0, 15.0, 3.75, 0.30}},
 	{"claude-haiku", Pricing{1.0, 5.0, 1.25, 0.10}},

@@ -148,6 +148,34 @@ func TestGetFriendlyName_FallbackToHardcoded(t *testing.T) {
 	}
 }
 
+func TestGetFriendlyName_FableFallback(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-fable-5")
+	if name != "Claude Fable 5" {
+		t.Errorf("expected 'Claude Fable 5' from hardcoded fallback, got %q", name)
+	}
+}
+
+func TestGetFriendlyName_MythosFallback(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// "claude-mythos-5" must match before the shorter "claude-mythos-preview"
+	// entry would — verify the most-specific-first ordering holds.
+	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-mythos-5")
+	if name != "Claude Mythos 5" {
+		t.Errorf("expected 'Claude Mythos 5' from hardcoded fallback, got %q", name)
+	}
+}
+
 func TestGetFriendlyName_RawARNFallback(t *testing.T) {
 	r := render.New(nil)
 	c := cache.New(t.TempDir())
