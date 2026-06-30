@@ -176,6 +176,20 @@ func TestGetFriendlyName_MythosFallback(t *testing.T) {
 	}
 }
 
+func TestGetFriendlyName_Sonnet5Fallback(t *testing.T) {
+	r := render.New(nil)
+	c := cache.New(t.TempDir())
+	cfg := &config.Config{Components: make(map[string]config.ComponentConfig)}
+
+	bm := NewBedrockModel(r, c, cfg, nil, icons.New("emoji"))
+
+	// "claude-sonnet-5" must match before the shorter "claude-sonnet-4" entries would.
+	name := bm.getFriendlyName("arn:aws:bedrock:us-east-2:123456:foundation-model/anthropic.claude-sonnet-5")
+	if name != "Claude Sonnet 5" {
+		t.Errorf("expected 'Claude Sonnet 5' from hardcoded fallback, got %q", name)
+	}
+}
+
 func TestGetFriendlyName_RawARNFallback(t *testing.T) {
 	r := render.New(nil)
 	c := cache.New(t.TempDir())
