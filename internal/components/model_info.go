@@ -50,6 +50,8 @@ func (c *ModelInfo) getIcon(name string) string {
 	lower := strings.ToLower(name)
 
 	switch {
+	case strings.Contains(lower, "fable"), strings.Contains(lower, "mythos"):
+		return c.icons.Get(icons.Sparkles)
 	case strings.Contains(lower, "opus"):
 		return c.icons.Get(icons.Brain)
 	case strings.Contains(lower, "haiku"):
