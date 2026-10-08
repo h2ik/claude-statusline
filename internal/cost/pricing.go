@@ -9,16 +9,22 @@ type Pricing struct {
 }
 
 var pricingTable = map[string]Pricing{
+	"claude-fable-5-1":           {10.0, 50.0, 12.5, 0.25},
+	"claude-mythos-5-1":          {10.0, 50.0, 12.5, 0.25},
 	"claude-fable-5":             {10.0, 50.0, 12.5, 1.0},
 	"claude-mythos-5":            {10.0, 50.0, 12.5, 1.0},
 	"claude-mythos-preview":      {10.0, 50.0, 12.5, 1.0},
+	"claude-opus-5-5":            {4.0, 20.0, 5.0, 0.20},
+	"claude-opus-5":              {5.0, 25.0, 6.25, 0.50},
 	"claude-opus-4-5-20251101":   {5.0, 25.0, 6.25, 0.50},
 	"claude-opus-4-6":            {5.0, 25.0, 6.25, 0.50},
 	"claude-opus-4-8":            {5.0, 25.0, 6.25, 0.50},
+	"claude-sonnet-5-5":          {2.0, 10.0, 2.5, 0.20},
 	"claude-sonnet-5":            {3.0, 15.0, 3.75, 0.30},
 	"claude-sonnet-4-5-20251101": {3.0, 15.0, 3.75, 0.30},
 	"claude-sonnet-4-5-20250929": {3.0, 15.0, 3.75, 0.30},
 	"claude-sonnet-4-20250514":   {3.0, 15.0, 3.75, 0.30},
+	"claude-haiku-5-5":           {0.10, 0.50, 0.125, 0.01},
 	"claude-haiku-4-5-20251101":  {1.0, 5.0, 1.25, 0.10},
 	"claude-haiku-4-5-20251001":  {1.0, 5.0, 1.25, 0.10},
 }
@@ -29,6 +35,13 @@ var prefixPricing = []struct {
 	prefix  string
 	pricing Pricing
 }{
+	// Versioned prefixes first so suffixed IDs (e.g. "[1m]") don't fall through
+	// to the older family-level rates below.
+	{"claude-fable-5-1", Pricing{10.0, 50.0, 12.5, 0.25}},
+	{"claude-mythos-5-1", Pricing{10.0, 50.0, 12.5, 0.25}},
+	{"claude-opus-5-5", Pricing{4.0, 20.0, 5.0, 0.20}},
+	{"claude-sonnet-5-5", Pricing{2.0, 10.0, 2.5, 0.20}},
+	{"claude-haiku-5-5", Pricing{0.10, 0.50, 0.125, 0.01}},
 	{"claude-fable", Pricing{10.0, 50.0, 12.5, 1.0}},
 	{"claude-mythos", Pricing{10.0, 50.0, 12.5, 1.0}},
 	{"claude-opus", Pricing{5.0, 25.0, 6.25, 0.50}},
@@ -51,10 +64,13 @@ func ModelPrice(model string) Pricing {
 }
 
 // CalculateEntryCost computes the USD cost for a single transcript entry.
-func CalculateEntryCost(inputTokens, outputTokens, cacheWriteTokens, cacheReadTokens int, model string) float64 {
+// cacheWriteTokens are billed at the 5-minute cache write rate;
+// cacheWrite1hTokens are billed at the 1-hour rate (2x base input).
+func CalculateEntryCost(inputTokens, outputTokens, cacheWriteTokens, cacheWrite1hTokens, cacheReadTokens int, model string) float64 {
 	p := ModelPrice(model)
 	return (float64(inputTokens)*p.InputPerMillion +
 		float64(outputTokens)*p.OutputPerMillion +
 		float64(cacheWriteTokens)*p.CacheWritePerMillion +
+		float64(cacheWrite1hTokens)*p.InputPerMillion*2 +
 		float64(cacheReadTokens)*p.CacheReadPerMillion) / 1_000_000
 }
