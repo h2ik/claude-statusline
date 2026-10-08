@@ -18,7 +18,29 @@ type transcriptEntry struct {
 	CacheWriteTokens   int // billed at the 5-minute rate
 	CacheWrite1hTokens int
 	CacheReadTokens    int
+	AdvisorCost        float64 // advisor tool calls, billed on top of the main usage
 	Timestamp          time.Time
+}
+
+// rawUsage is the token usage block shared by a message and its iterations.
+type rawUsage struct {
+	InputTokens              int `json:"input_tokens"`
+	OutputTokens             int `json:"output_tokens"`
+	CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+	CacheReadInputTokens     int `json:"cache_read_input_tokens"`
+	CacheCreation            *struct {
+		Ephemeral5mInputTokens int `json:"ephemeral_5m_input_tokens"`
+		Ephemeral1hInputTokens int `json:"ephemeral_1h_input_tokens"`
+	} `json:"cache_creation"`
+}
+
+// cacheWrites splits cache writes by TTL when the breakdown is present; 1-hour
+// writes cost more than 5-minute ones. Older transcripts only have the total.
+func (u rawUsage) cacheWrites() (fiveMin, oneHour int) {
+	if cc := u.CacheCreation; cc != nil && cc.Ephemeral5mInputTokens+cc.Ephemeral1hInputTokens > 0 {
+		return cc.Ephemeral5mInputTokens, cc.Ephemeral1hInputTokens
+	}
+	return u.CacheCreationInputTokens, 0
 }
 
 // rawTranscriptLine is the minimal JSON structure we unmarshal.
@@ -29,14 +51,14 @@ type rawTranscriptLine struct {
 		ID    string `json:"id"`
 		Model string `json:"model"`
 		Usage struct {
-			InputTokens              int `json:"input_tokens"`
-			OutputTokens             int `json:"output_tokens"`
-			CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
-			CacheReadInputTokens     int `json:"cache_read_input_tokens"`
-			CacheCreation            *struct {
-				Ephemeral5mInputTokens int `json:"ephemeral_5m_input_tokens"`
-				Ephemeral1hInputTokens int `json:"ephemeral_1h_input_tokens"`
-			} `json:"cache_creation"`
+			rawUsage
+			// Iterations break a response into its sub-requests. Advisor
+			// calls are only reported here, not in the top-level counts.
+			Iterations []struct {
+				rawUsage
+				Type  string `json:"type"`
+				Model string `json:"model"`
+			} `json:"iterations"`
 		} `json:"usage"`
 	} `json:"message"`
 	Timestamp string `json:"timestamp"`
@@ -59,12 +81,19 @@ func parseTranscriptEntry(line []byte) (transcriptEntry, bool) {
 	if err != nil {
 		return transcriptEntry{}, false
 	}
-	// Split cache writes by TTL when the breakdown is present; 1-hour writes
-	// cost more than 5-minute ones. Older transcripts only have the total.
 	usage := raw.Message.Usage
-	cacheWrite5m, cacheWrite1h := usage.CacheCreationInputTokens, 0
-	if cc := usage.CacheCreation; cc != nil && cc.Ephemeral5mInputTokens+cc.Ephemeral1hInputTokens > 0 {
-		cacheWrite5m, cacheWrite1h = cc.Ephemeral5mInputTokens, cc.Ephemeral1hInputTokens
+	cacheWrite5m, cacheWrite1h := usage.cacheWrites()
+	var advisorCost float64
+	for _, it := range usage.Iterations {
+		if it.Type != "advisor_message" {
+			continue
+		}
+		model := it.Model
+		if model == "" {
+			model = raw.Message.Model
+		}
+		w5, w1 := it.cacheWrites()
+		advisorCost += CalculateEntryCost(it.InputTokens, it.OutputTokens, w5, w1, it.CacheReadInputTokens, model)
 	}
 	return transcriptEntry{
 		MessageID:          raw.Message.ID,
@@ -74,6 +103,7 @@ func parseTranscriptEntry(line []byte) (transcriptEntry, bool) {
 		CacheWriteTokens:   cacheWrite5m,
 		CacheWrite1hTokens: cacheWrite1h,
 		CacheReadTokens:    raw.Message.Usage.CacheReadInputTokens,
+		AdvisorCost:        advisorCost,
 		Timestamp:          ts,
 	}, true
 }
@@ -100,6 +130,7 @@ func scanFile(path string, cutoff time.Time) float64 {
 		cacheWriteTokens   int
 		cacheWrite1hTokens int
 		cacheReadTokens    int
+		advisorCost        float64
 		model              string
 	}
 	deduped := make(map[string]entryData)
@@ -125,7 +156,7 @@ func scanFile(path string, cutoff time.Time) float64 {
 				entry.InputTokens, entry.OutputTokens,
 				entry.CacheWriteTokens, entry.CacheWrite1hTokens, entry.CacheReadTokens,
 				entry.Model,
-			)
+			) + entry.AdvisorCost
 			continue
 		}
 		// Last write wins — later entries for the same ID have final token counts.
@@ -135,6 +166,7 @@ func scanFile(path string, cutoff time.Time) float64 {
 			cacheWriteTokens:   entry.CacheWriteTokens,
 			cacheWrite1hTokens: entry.CacheWrite1hTokens,
 			cacheReadTokens:    entry.CacheReadTokens,
+			advisorCost:        entry.AdvisorCost,
 			model:              entry.Model,
 		}
 	}
@@ -145,7 +177,7 @@ func scanFile(path string, cutoff time.Time) float64 {
 			e.inputTokens, e.outputTokens,
 			e.cacheWriteTokens, e.cacheWrite1hTokens, e.cacheReadTokens,
 			e.model,
-		)
+		) + e.advisorCost
 	}
 	return total + noIDTotal
 }
