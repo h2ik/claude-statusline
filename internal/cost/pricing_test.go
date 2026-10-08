@@ -17,7 +17,13 @@ func TestModelPrice_KnownModels(t *testing.T) {
 		{"claude-mythos-preview", 10.0, 50.0, 12.5, 1.0},
 		{"claude-opus-4-5-20251101", 5.0, 25.0, 6.25, 0.50},
 		{"claude-opus-4-6", 5.0, 25.0, 6.25, 0.50},
+		{"claude-fable-5-1", 10.0, 50.0, 12.5, 0.25},
+		{"claude-opus-5-5", 4.0, 20.0, 5.0, 0.20},
+		{"claude-opus-5-5[1m]", 4.0, 20.0, 5.0, 0.20},
+		{"claude-opus-5", 5.0, 25.0, 6.25, 0.50},
+		{"claude-sonnet-5-5", 2.0, 10.0, 2.5, 0.20},
 		{"claude-sonnet-5", 3.0, 15.0, 3.75, 0.30},
+		{"claude-haiku-5-5", 0.10, 0.50, 0.125, 0.01},
 		{"claude-sonnet-4-5-20251101", 3.0, 15.0, 3.75, 0.30},
 		{"claude-sonnet-4-5-20250929", 3.0, 15.0, 3.75, 0.30},
 		{"claude-sonnet-4-20250514", 3.0, 15.0, 3.75, 0.30},
@@ -73,7 +79,7 @@ func TestModelPrice_FableDoesNotFallThroughToDefault(t *testing.T) {
 
 func TestCalculateEntryCost(t *testing.T) {
 	// Opus pricing: (1000*5 + 500*25 + 200*6.25 + 10000*0.50) / 1M = 0.02375
-	cost := CalculateEntryCost(1000, 500, 200, 10000, "claude-opus-4-5-20251101")
+	cost := CalculateEntryCost(1000, 500, 200, 0, 10000, "claude-opus-4-5-20251101")
 	expected := 0.02375
 	if cost < expected-0.0001 || cost > expected+0.0001 {
 		t.Errorf("expected %f, got %f", expected, cost)
@@ -81,8 +87,18 @@ func TestCalculateEntryCost(t *testing.T) {
 }
 
 func TestCalculateEntryCost_ZeroTokens(t *testing.T) {
-	cost := CalculateEntryCost(0, 0, 0, 0, "claude-opus-4-5-20251101")
+	cost := CalculateEntryCost(0, 0, 0, 0, 0, "claude-opus-4-5-20251101")
 	if cost != 0.0 {
 		t.Errorf("expected 0.0 for zero tokens, got %f", cost)
+	}
+}
+
+func TestCalculateEntryCost_OneHourCacheWrites(t *testing.T) {
+	// Opus 5.5: 1h cache writes at 2x input = $8/M, 5m writes at $5/M.
+	// (1000*5 + 1000*8) / 1M = 0.013
+	cost := CalculateEntryCost(0, 0, 1000, 1000, 0, "claude-opus-5-5")
+	expected := 0.013
+	if cost < expected-0.000001 || cost > expected+0.000001 {
+		t.Errorf("expected %f, got %f", expected, cost)
 	}
 }

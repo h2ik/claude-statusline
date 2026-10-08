@@ -12,7 +12,7 @@ const transcriptCacheTTL = 5 * time.Minute
 
 // cacheVersion is bumped when the cost calculation logic changes, which
 // automatically invalidates stale cached values from older binaries.
-const cacheVersion = "v2"
+const cacheVersion = "v3"
 
 // TranscriptScanner computes period costs by scanning Claude Code's native
 // JSONL transcript files. Results are cached for 5 minutes.

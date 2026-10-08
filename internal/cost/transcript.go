@@ -11,13 +11,14 @@ import (
 
 // transcriptEntry holds parsed fields from a single JSONL transcript line.
 type transcriptEntry struct {
-	MessageID        string
-	Model            string
-	InputTokens      int
-	OutputTokens     int
-	CacheWriteTokens int
-	CacheReadTokens  int
-	Timestamp        time.Time
+	MessageID          string
+	Model              string
+	InputTokens        int
+	OutputTokens       int
+	CacheWriteTokens   int // billed at the 5-minute rate
+	CacheWrite1hTokens int
+	CacheReadTokens    int
+	Timestamp          time.Time
 }
 
 // rawTranscriptLine is the minimal JSON structure we unmarshal.
@@ -32,6 +33,10 @@ type rawTranscriptLine struct {
 			OutputTokens             int `json:"output_tokens"`
 			CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
 			CacheReadInputTokens     int `json:"cache_read_input_tokens"`
+			CacheCreation            *struct {
+				Ephemeral5mInputTokens int `json:"ephemeral_5m_input_tokens"`
+				Ephemeral1hInputTokens int `json:"ephemeral_1h_input_tokens"`
+			} `json:"cache_creation"`
 		} `json:"usage"`
 	} `json:"message"`
 	Timestamp string `json:"timestamp"`
@@ -54,14 +59,22 @@ func parseTranscriptEntry(line []byte) (transcriptEntry, bool) {
 	if err != nil {
 		return transcriptEntry{}, false
 	}
+	// Split cache writes by TTL when the breakdown is present; 1-hour writes
+	// cost more than 5-minute ones. Older transcripts only have the total.
+	usage := raw.Message.Usage
+	cacheWrite5m, cacheWrite1h := usage.CacheCreationInputTokens, 0
+	if cc := usage.CacheCreation; cc != nil && cc.Ephemeral5mInputTokens+cc.Ephemeral1hInputTokens > 0 {
+		cacheWrite5m, cacheWrite1h = cc.Ephemeral5mInputTokens, cc.Ephemeral1hInputTokens
+	}
 	return transcriptEntry{
-		MessageID:        raw.Message.ID,
-		Model:            raw.Message.Model,
-		InputTokens:      raw.Message.Usage.InputTokens,
-		OutputTokens:     raw.Message.Usage.OutputTokens,
-		CacheWriteTokens: raw.Message.Usage.CacheCreationInputTokens,
-		CacheReadTokens:  raw.Message.Usage.CacheReadInputTokens,
-		Timestamp:        ts,
+		MessageID:          raw.Message.ID,
+		Model:              raw.Message.Model,
+		InputTokens:        raw.Message.Usage.InputTokens,
+		OutputTokens:       raw.Message.Usage.OutputTokens,
+		CacheWriteTokens:   cacheWrite5m,
+		CacheWrite1hTokens: cacheWrite1h,
+		CacheReadTokens:    raw.Message.Usage.CacheReadInputTokens,
+		Timestamp:          ts,
 	}, true
 }
 
@@ -82,11 +95,12 @@ func scanFile(path string, cutoff time.Time) float64 {
 
 	// Track the last entry per message ID so streaming duplicates collapse.
 	type entryData struct {
-		inputTokens      int
-		outputTokens     int
-		cacheWriteTokens int
-		cacheReadTokens  int
-		model            string
+		inputTokens        int
+		outputTokens       int
+		cacheWriteTokens   int
+		cacheWrite1hTokens int
+		cacheReadTokens    int
+		model              string
 	}
 	deduped := make(map[string]entryData)
 	var noIDTotal float64
@@ -109,18 +123,19 @@ func scanFile(path string, cutoff time.Time) float64 {
 		if entry.MessageID == "" {
 			noIDTotal += CalculateEntryCost(
 				entry.InputTokens, entry.OutputTokens,
-				entry.CacheWriteTokens, entry.CacheReadTokens,
+				entry.CacheWriteTokens, entry.CacheWrite1hTokens, entry.CacheReadTokens,
 				entry.Model,
 			)
 			continue
 		}
 		// Last write wins — later entries for the same ID have final token counts.
 		deduped[entry.MessageID] = entryData{
-			inputTokens:      entry.InputTokens,
-			outputTokens:     entry.OutputTokens,
-			cacheWriteTokens: entry.CacheWriteTokens,
-			cacheReadTokens:  entry.CacheReadTokens,
-			model:            entry.Model,
+			inputTokens:        entry.InputTokens,
+			outputTokens:       entry.OutputTokens,
+			cacheWriteTokens:   entry.CacheWriteTokens,
+			cacheWrite1hTokens: entry.CacheWrite1hTokens,
+			cacheReadTokens:    entry.CacheReadTokens,
+			model:              entry.Model,
 		}
 	}
 
@@ -128,7 +143,7 @@ func scanFile(path string, cutoff time.Time) float64 {
 	for _, e := range deduped {
 		total += CalculateEntryCost(
 			e.inputTokens, e.outputTokens,
-			e.cacheWriteTokens, e.cacheReadTokens,
+			e.cacheWriteTokens, e.cacheWrite1hTokens, e.cacheReadTokens,
 			e.model,
 		)
 	}

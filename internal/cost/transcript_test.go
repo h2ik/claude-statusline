@@ -276,3 +276,18 @@ func TestScanTranscripts_SkipsToolResultsDir(t *testing.T) {
 		t.Errorf("expected %f, got %f", expected, total)
 	}
 }
+
+func TestParseTranscriptEntry_SplitsCacheWritesByTTL(t *testing.T) {
+	line := `{"type":"assistant","message":{"model":"claude-opus-5-5","id":"msg_ttl","usage":{"input_tokens":3,"cache_creation_input_tokens":3000,"cache_read_input_tokens":0,"output_tokens":10,"cache_creation":{"ephemeral_1h_input_tokens":2000,"ephemeral_5m_input_tokens":1000}}},"timestamp":"2026-10-08T14:07:12.083Z"}`
+
+	entry, ok := parseTranscriptEntry([]byte(line))
+	if !ok {
+		t.Fatal("expected ok=true")
+	}
+	if entry.CacheWriteTokens != 1000 {
+		t.Errorf("5m cache writes: got %d, want 1000", entry.CacheWriteTokens)
+	}
+	if entry.CacheWrite1hTokens != 2000 {
+		t.Errorf("1h cache writes: got %d, want 2000", entry.CacheWrite1hTokens)
+	}
+}
