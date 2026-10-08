@@ -291,3 +291,21 @@ func TestParseTranscriptEntry_SplitsCacheWritesByTTL(t *testing.T) {
 		t.Errorf("1h cache writes: got %d, want 2000", entry.CacheWrite1hTokens)
 	}
 }
+
+func TestParseTranscriptEntry_AddsAdvisorIterationCost(t *testing.T) {
+	// The top-level usage covers only the executor; the advisor call appears
+	// solely in iterations. "message" iterations duplicate the top level.
+	line := `{"type":"assistant","message":{"model":"claude-opus-5-5","id":"msg_adv","usage":{"input_tokens":4,"output_tokens":700,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"iterations":[{"type":"message","input_tokens":4,"output_tokens":700},{"type":"advisor_message","model":"claude-opus-5-5","input_tokens":100000,"output_tokens":5000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}]}},"timestamp":"2026-10-08T14:07:12.083Z"}`
+
+	entry, ok := parseTranscriptEntry([]byte(line))
+	if !ok {
+		t.Fatal("expected ok=true")
+	}
+	// (100000*4 + 5000*20) / 1M = 0.50
+	if entry.AdvisorCost < 0.4999 || entry.AdvisorCost > 0.5001 {
+		t.Errorf("advisor cost: got %f, want 0.50", entry.AdvisorCost)
+	}
+	if entry.InputTokens != 4 || entry.OutputTokens != 700 {
+		t.Errorf("top-level tokens changed: got %d/%d", entry.InputTokens, entry.OutputTokens)
+	}
+}
