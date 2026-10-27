@@ -55,5 +55,8 @@ homebrew_casks:
       - claude-statusline
     hooks:
       pre:
-        install: |
-          system_command "/usr/bin/xattr", args: ["-cr", "#{staged_path}/claude-statusline"]
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/claude-statusline"]
+          end
+
