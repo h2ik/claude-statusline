@@ -189,7 +189,7 @@ func detectTerminalWidth() int {
 	// Try /dev/tty directly — works for some subprocesses with a controlling terminal
 	if tty, err := os.Open("/dev/tty"); err == nil {
 		w, _, err := term.GetSize(int(tty.Fd()))
-		tty.Close()
+		_ = tty.Close()
 		if err == nil && w > 0 {
 			return w
 		}
