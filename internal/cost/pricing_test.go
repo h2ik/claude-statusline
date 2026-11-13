@@ -18,6 +18,9 @@ func TestModelPrice_KnownModels(t *testing.T) {
 		{"claude-opus-4-5-20251101", 5.0, 25.0, 6.25, 0.50},
 		{"claude-opus-4-6", 5.0, 25.0, 6.25, 0.50},
 		{"claude-fable-5-1", 10.0, 50.0, 12.5, 0.25},
+		{"claude-fable-5-2", 8.0, 40.0, 10.0, 0.20},
+		{"claude-fable-5-2[1m]", 8.0, 40.0, 10.0, 0.20},
+		{"claude-mythos-5-2", 8.0, 40.0, 10.0, 0.20},
 		{"claude-opus-5-5", 4.0, 20.0, 5.0, 0.20},
 		{"claude-opus-5-5[1m]", 4.0, 20.0, 5.0, 0.20},
 		{"claude-opus-5", 5.0, 25.0, 6.25, 0.50},
@@ -74,6 +77,14 @@ func TestModelPrice_FableDoesNotFallThroughToDefault(t *testing.T) {
 	p := ModelPrice("claude-fable-5-20260901")
 	if p.InputPerMillion != 10.0 || p.OutputPerMillion != 50.0 {
 		t.Errorf("expected Fable prefix match 10.0/50.0, got %v/%v", p.InputPerMillion, p.OutputPerMillion)
+	}
+}
+
+func TestModelPrice_Fable52PrefixStopsAtDigitBoundary(t *testing.T) {
+	// Dated Fable 5.2 ID must match the "claude-fable-5-2" prefix.
+	p := ModelPrice("claude-fable-5-2-20261101")
+	if p.InputPerMillion != 8.0 || p.OutputPerMillion != 40.0 {
+		t.Errorf("expected Fable 5.2 prefix match 8.0/40.0, got %v/%v", p.InputPerMillion, p.OutputPerMillion)
 	}
 }
 

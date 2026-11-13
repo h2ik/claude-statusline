@@ -9,6 +9,8 @@ type Pricing struct {
 }
 
 var pricingTable = map[string]Pricing{
+	"claude-fable-5-2":           {8.0, 40.0, 10.0, 0.20},
+	"claude-mythos-5-2":          {8.0, 40.0, 10.0, 0.20},
 	"claude-fable-5-1":           {10.0, 50.0, 12.5, 0.25},
 	"claude-mythos-5-1":          {10.0, 50.0, 12.5, 0.25},
 	"claude-fable-5":             {10.0, 50.0, 12.5, 1.0},
@@ -37,6 +39,8 @@ var prefixPricing = []struct {
 }{
 	// Versioned prefixes first so suffixed IDs (e.g. "[1m]") don't fall through
 	// to the older family-level rates below.
+	{"claude-fable-5-2", Pricing{8.0, 40.0, 10.0, 0.20}},
+	{"claude-mythos-5-2", Pricing{8.0, 40.0, 10.0, 0.20}},
 	{"claude-fable-5-1", Pricing{10.0, 50.0, 12.5, 0.25}},
 	{"claude-mythos-5-1", Pricing{10.0, 50.0, 12.5, 0.25}},
 	{"claude-opus-5-5", Pricing{4.0, 20.0, 5.0, 0.20}},
@@ -56,11 +60,25 @@ func ModelPrice(model string) Pricing {
 		return p
 	}
 	for _, pp := range prefixPricing {
-		if len(model) >= len(pp.prefix) && model[:len(pp.prefix)] == pp.prefix {
+		if hasModelPrefix(model, pp.prefix) {
 			return pp.pricing
 		}
 	}
 	return defaultPricing
+}
+
+// hasModelPrefix returns true if model starts with prefix and the next
+// character is not a digit. This stops "claude-fable-5-2" from matching
+// the dated ID "claude-fable-5-20260901".
+func hasModelPrefix(model, prefix string) bool {
+	if len(model) < len(prefix) || model[:len(prefix)] != prefix {
+		return false
+	}
+	if len(model) == len(prefix) {
+		return true
+	}
+	next := model[len(prefix)]
+	return next < '0' || next > '9'
 }
 
 // CalculateEntryCost computes the USD cost for a single transcript entry.
