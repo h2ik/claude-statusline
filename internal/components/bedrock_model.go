@@ -71,7 +71,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 		region = parts[3]
 	}
 
-	cached, err := c.cache.Get("bedrock:v3:"+arn, 24*time.Hour)
+	cached, err := c.cache.Get("bedrock:v4:"+arn, 24*time.Hour)
 	if err == nil {
 		fields := strings.SplitN(string(cached), "\t", 2)
 		if len(fields) == 2 {
@@ -103,7 +103,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 			for _, p := range profiles {
 				if p.ARN == arn {
 					friendlyName := c.getFriendlyName(p.ModelARN)
-					_ = c.cache.Set("bedrock:v3:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
+					_ = c.cache.Set("bedrock:v4:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 					return friendlyName, region
 				}
 			}
@@ -113,7 +113,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 		// fallback (works for inference-profile ARNs that contain model
 		// slugs like "claude-opus-4-6" in their ID).
 		if name := c.getFriendlyName(arn); name != arn {
-			_ = c.cache.Set("bedrock:v3:"+arn, []byte(name+"\t"+region), 24*time.Hour)
+			_ = c.cache.Set("bedrock:v4:"+arn, []byte(name+"\t"+region), 24*time.Hour)
 			return name, region
 		}
 
@@ -123,7 +123,7 @@ func (c *BedrockModel) resolveBedrockARN(arn string) (string, string) {
 	modelARN := strings.TrimSpace(string(output))
 	friendlyName := c.getFriendlyName(modelARN)
 
-	_ = c.cache.Set("bedrock:v3:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
+	_ = c.cache.Set("bedrock:v4:"+arn, []byte(friendlyName+"\t"+region), 24*time.Hour)
 
 	return friendlyName, region
 }
@@ -156,7 +156,7 @@ type profileEntry struct {
 // it from the AWS API. Maps application-inference-profile ARNs to their
 // underlying foundation-model ARNs.
 func (c *BedrockModel) loadProfileCatalog() []profileEntry {
-	cached, err := c.cache.Get("bedrock:v3:profile-catalog", 24*time.Hour)
+	cached, err := c.cache.Get("bedrock:v4:profile-catalog", 24*time.Hour)
 	if err == nil {
 		var profiles []profileEntry
 		if json.Unmarshal(cached, &profiles) == nil {
@@ -188,7 +188,7 @@ func (c *BedrockModel) loadProfileCatalog() []profileEntry {
 		return nil
 	}
 
-	_ = c.cache.Set("bedrock:v3:profile-catalog", output, 24*time.Hour)
+	_ = c.cache.Set("bedrock:v4:profile-catalog", output, 24*time.Hour)
 	return profiles
 }
 
@@ -201,7 +201,7 @@ type modelEntry struct {
 // loadModelCatalog returns the cached model catalog, or fetches it from
 // the AWS API. Returns nil if the catalog is unavailable.
 func (c *BedrockModel) loadModelCatalog() []modelEntry {
-	cached, err := c.cache.Get("bedrock:v3:model-catalog", 24*time.Hour)
+	cached, err := c.cache.Get("bedrock:v4:model-catalog", 24*time.Hour)
 	if err == nil {
 		var models []modelEntry
 		if json.Unmarshal(cached, &models) == nil {
@@ -233,7 +233,7 @@ func (c *BedrockModel) loadModelCatalog() []modelEntry {
 		return nil
 	}
 
-	_ = c.cache.Set("bedrock:v3:model-catalog", output, 24*time.Hour)
+	_ = c.cache.Set("bedrock:v4:model-catalog", output, 24*time.Hour)
 	return models
 }
 
@@ -256,19 +256,27 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 		key  string
 		name string
 	}{
+		{"claude-fable-5-2", "Claude Fable 5.2"},
+		{"claude-fable-5-1", "Claude Fable 5.1"},
 		{"claude-fable-5", "Claude Fable 5"},
+		{"claude-mythos-5-2", "Claude Mythos 5.2"},
+		{"claude-mythos-5-1", "Claude Mythos 5.1"},
 		{"claude-mythos-preview", "Claude Mythos Preview"},
 		{"claude-mythos-5", "Claude Mythos 5"},
+		{"claude-opus-5-5", "Claude Opus 5.5"},
+		{"claude-opus-5", "Claude Opus 5"},
 		{"claude-opus-4-8", "Claude Opus 4.8"},
 		{"claude-opus-4-7", "Claude Opus 4.7"},
 		{"claude-opus-4-6", "Claude Opus 4.6"},
 		{"claude-opus-4-5", "Claude Opus 4.5"},
 		{"claude-opus-4", "Claude Opus 4"},
+		{"claude-sonnet-5-5", "Claude Sonnet 5.5"},
 		{"claude-sonnet-5", "Claude Sonnet 5"},
 		{"claude-sonnet-4-7", "Claude Sonnet 4.7"},
 		{"claude-sonnet-4-6", "Claude Sonnet 4.6"},
 		{"claude-sonnet-4-5", "Claude Sonnet 4.5"},
 		{"claude-sonnet-4", "Claude Sonnet 4"},
+		{"claude-haiku-5-5", "Claude Haiku 5.5"},
 		{"claude-haiku-4-5", "Claude Haiku 4.5"},
 		{"claude-haiku-4", "Claude Haiku 4"},
 		{"claude-3-5-sonnet", "Claude 3.5 Sonnet"},
@@ -278,10 +286,27 @@ func (c *BedrockModel) getFriendlyName(modelARN string) string {
 	}
 
 	for _, f := range fallback {
-		if strings.Contains(modelARN, f.key) {
+		if containsModelKey(modelARN, f.key) {
 			return f.name
 		}
 	}
 
 	return modelARN
+}
+
+// containsModelKey returns true if s contains key and the character after
+// one match is not a digit. This stops "claude-fable-5-2" from matching
+// the dated ARN "claude-fable-5-20260901".
+func containsModelKey(s, key string) bool {
+	for start := 0; ; {
+		idx := strings.Index(s[start:], key)
+		if idx < 0 {
+			return false
+		}
+		end := start + idx + len(key)
+		if end == len(s) || s[end] < '0' || s[end] > '9' {
+			return true
+		}
+		start += idx + 1
+	}
 }
